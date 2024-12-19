@@ -97,7 +97,7 @@ class Node:
     def interact_with(self, other):
         r = other.position - self.position
         direct = r.get_normalized()
-        length = r.get_length() / (2.2 * node_radius)
+        length = r.get_length() / (5 * node_radius)
         force = direct / length ** 2
         force -= direct / length ** 3.5
         period = 1 / FPS
