@@ -135,11 +135,7 @@ camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
 scale = 1
 
-N = int(input())
-matrix = []
-for i in range(N):
-    matrix.append([int(i) for i in input().split()])
-    #Objects.append(Node(Vector(100, 100)))
+
 
 
 running = True
