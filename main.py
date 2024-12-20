@@ -87,6 +87,8 @@ class Node:
     def __copy__(self):
         return Node(self.position, self.destinations)
 
+    def __str__(self):
+        return str(self.position)
     def draw(self, surface, node_color, radius):
         radius /= scale
         position = (self.position - camera_center) / scale + camera_center
@@ -97,8 +99,8 @@ class Node:
     def interact_with(self, other):
         r = other.position - self.position
         direct = r.get_normalized()
-        length = r.get_length() / (5 * node_radius)
-        force = direct / length ** 2
+        length = r.get_length() / (3 * node_radius)
+        force = direct / length ** 3
         force -= direct / length ** 3.5
         period = 1 / FPS
         dv = force * period * 500
@@ -115,6 +117,7 @@ class Node:
 def draw_connection(surface, node_color, a: Node, b: Node):
     if a.position.get_tuple() == b.position.get_tuple():
         return
+
     pygame.draw.line(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
                      a.position.get_tuple(), b.position.get_tuple(), int(node_radius * 0.3))
     pygame.draw.circle(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
@@ -125,9 +128,13 @@ def draw_connection(surface, node_color, a: Node, b: Node):
 
 is_grabing = False
 is_displacing = False
+is_connecting = False
+
 displacement_start = Vector(0, 0)
 grabed = Node(Vector(-10e8, -10e8))
 paused = False
+connecting_from = Node(Vector(-10e8, -10e8))
+
 
 Objects = []
 camera_pos = Vector(0, 0)
@@ -148,6 +155,12 @@ while running:
 
             for obj in Objects:
                 if (mouse_pos - obj.position).get_length() < node_radius:
+                    print("LOG : ")
+                    print(obj)
+                    for d in obj.destinations:
+                        print(d)
+                    print()
+                    break
                     is_grabing = True
                     grabed = obj
                     break
@@ -167,7 +180,29 @@ while running:
 
         if event.type == MOUSEBUTTONDOWN and event.button == 3:
             mouse_pos = get_mouse_pos()
-            Objects.append(Node(mouse_pos))
+            for obj in Objects:
+                if (mouse_pos - obj.position).get_length() < node_radius:
+                    connecting_from = obj
+                    is_connecting = True
+                    break
+            else:
+                Objects.append(Node(mouse_pos))
+                continue
+
+        if event.type == MOUSEBUTTONUP and event.button == 3 and is_connecting:
+            mouse_pos = get_mouse_pos()
+            is_connecting = False
+            for obj in Objects:
+                if (mouse_pos - obj.position).get_length() < node_radius:
+                    break
+            else:
+                temp = Node(mouse_pos)
+                Objects.append(temp)
+
+                connecting_from.destinations.append(temp)
+                connecting_from = Node(Vector(-10e8, -10e8))
+                continue
+
         if event.type == MOUSEWHEEL:
             scale = max(min((scale * 10 - event.y) / 10, 10), 1)
 
@@ -216,7 +251,9 @@ while running:
     display_surface.fill(BLACK)
     for obj in Objects:
         obj.draw(display_surface, NODE_COLOR, node_radius)
+
         for dest in obj.destinations:
+            dest.draw(display_surface, (255, 0, 0), node_radius)
             draw_connection(display_surface, NODE_COLOR, obj, dest)
     clock.tick(FPS)
     pygame.display.update()
