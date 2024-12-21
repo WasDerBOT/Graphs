@@ -77,7 +77,7 @@ mx = 0
 class Node:
     def __init__(self, position: Vector, destinations=[]):
         self.position = position
-        self.destinations = destinations
+        self.destinations = destinations.copy()
         self.velocity = Vector(0, 0)
 
     def __copy__(self):
@@ -93,18 +93,18 @@ class Node:
         pygame.draw.circle(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
                            position.get_tuple(), int(radius), int(radius * 0.3))
         for dest in self.destinations:
-            print(self.destinations)
             draw_connection(surface, node_color, self, dest)
 
     def interact_with(self, other):
         r = other.position - self.position
         direct = r.get_normalized()
-        length = r.get_length() / (2 * node_radius)
+        length = r.get_length() / (3 * node_radius)
         force = Vector(0, 0)
+        if other in self.destinations or self in other.destinations:
+            force = direct * length ** 2
+            force *= 0.1
 
-        force = direct / length ** 3.7
-
-        force -= direct / length ** 4
+        force -= direct / length ** 3.5
         period = 1 / FPS
         dv = force * period * 400
         global mx
@@ -130,13 +130,13 @@ def draw_connection(surface, node_color, a: Node, b: Node):
     pygame.draw.circle(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
                        ta.get_tuple(), width / 2)
     pygame.draw.circle(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
-                       tb.get_tuple(), width * 2)
+                       tb.get_tuple(), width / 2)
 
 
 is_grabing = False
 is_displacing = False
 is_connecting = False
-
+shift = False
 displacement_start = Vector(0, 0)
 grabed = Node(Vector(-10e8, -10e8))
 paused = False
@@ -158,9 +158,22 @@ while running:
 
             for obj in Objects:
                 if (mouse_pos - obj.position).get_length() < node_radius:
-                    is_grabing = True
-                    grabed = obj
+                    if shift:
+                        obj.destinations.clear()
+                        for o in Objects:
+                            if obj in o.destinations:
+                                o.destinations.remove(obj)
+                    else:
+                        is_grabing = True
+                        grabed = obj
+
                     break
+
+        if event.type == KEYDOWN and event.mod & pygame.KMOD_LSHIFT:
+            shift = True
+        if event.type == KEYUP and event.key == pygame.K_LSHIFT:
+            shift = False
+
         if event.type == MOUSEBUTTONDOWN and event.button == 2:
             mouse_pos = get_mouse_pos()
             displacement_start = None
@@ -182,6 +195,7 @@ while running:
                     new = Node(Vector(randint(int(node_radius), int(node_radius * 2)),
                                       randint(int(node_radius),
                                               int(node_radius * 2))) * ((-1) ** randint(1, 2)) + mouse_pos)
+                    new.destinations.append(obj)
                     obj.destinations.append(new)
                     Objects.append(new)
 
@@ -196,13 +210,13 @@ while running:
         if event.type == MOUSEBUTTONUP and grabed:
             grabed = None
             is_grabing = False
-        if event.type == KEYDOWN:
+        if event.type == KEYDOWN and event.key == pygame.K_q:
             paused = not paused
     # Processing
     for obj in Objects:
         if paused:
             break
-        obj.velocity *= 0.95
+        obj.velocity *= 0.8
 
         # Kinda gravity
         # obj.velocity += Vector(0, 1) * 30 / FPS
@@ -239,8 +253,7 @@ while running:
     for obj in Objects:
         obj.draw(display_surface, NODE_COLOR, node_radius)
 
-        for dest in obj.destinations:
-            dest.draw(display_surface, (255, 0, 0), node_radius)
+
 
     clock.tick(FPS)
     pygame.display.update()
