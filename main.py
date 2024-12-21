@@ -1,7 +1,6 @@
-from random import randint
-
 import pygame
 from pygame.locals import *
+from random import randint
 
 pygame.init()
 FPS = 60
@@ -98,11 +97,11 @@ class Node:
     def interact_with(self, other):
         r = other.position - self.position
         direct = r.get_normalized()
-        length = r.get_length() / (3 * node_radius)
+        length = r.get_length() / (2 * node_radius)
         force = Vector(0, 0)
         if other in self.destinations or self in other.destinations:
-            force = direct * length ** 2
-            force *= 0.1
+            force = direct * length ** 3
+            force *= 0.01
 
         force -= direct / length ** 3.5
         period = 1 / FPS
@@ -179,7 +178,11 @@ while running:
             displacement_start = None
             for obj in Objects:
                 if (mouse_pos - obj.position).get_length() < node_radius:
+                    for o in Objects:
+                        if obj in o.destinations:
+                            o.destinations.remove(obj)
                     Objects.remove(obj)
+
                     break
             else:
                 continue  # this functional currently turned off
@@ -192,9 +195,11 @@ while running:
             mouse_pos = get_mouse_pos()
             for obj in Objects:
                 if (mouse_pos - obj.position).get_length() < node_radius:
-                    new = Node(Vector(randint(int(node_radius), int(node_radius * 2)),
-                                      randint(int(node_radius),
-                                              int(node_radius * 2))) * ((-1) ** randint(1, 2)) + mouse_pos)
+                    a = [Vector(0, -node_radius),
+                         Vector(0, node_radius),
+                         Vector(-node_radius, 0),
+                         Vector(node_radius, 0)]
+                    new = Node(a[randint(0, 3)] + mouse_pos)
                     new.destinations.append(obj)
                     obj.destinations.append(new)
                     Objects.append(new)
@@ -212,6 +217,10 @@ while running:
             is_grabing = False
         if event.type == KEYDOWN and event.key == pygame.K_q:
             paused = not paused
+        if event.type == KEYDOWN and event.key == pygame.K_c:
+            for obj in Objects:
+                obj.destinations.clear()
+            Objects.clear()
     # Processing
     for obj in Objects:
         if paused:
@@ -252,8 +261,6 @@ while running:
     display_surface.fill(BLACK)
     for obj in Objects:
         obj.draw(display_surface, NODE_COLOR, node_radius)
-
-
 
     clock.tick(FPS)
     pygame.display.update()
