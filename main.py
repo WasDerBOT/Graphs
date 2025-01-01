@@ -234,8 +234,8 @@ while running:
                     elif connecting_from != None:
                         connecting_from.destinations.append(obj)
                         obj.destinations.append(connecting_from)
-                        connecting_from = None
                         break
+            connecting_from = None
 
         if event.type == MOUSEWHEEL:
             scale = max(min((scale * 10 - event.y) / 10, 10), 1)
