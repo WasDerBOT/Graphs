@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import *
 from random import randint
+import numpy as np
 
 pygame.init()
 FPS = 60
@@ -12,7 +13,8 @@ clock = pygame.time.Clock()
 
 BLACK = (0, 0, 0)
 
-NODE_COLOR = (0, 153, 76)
+NODE_COLOR = np.array((0, 153, 76))
+NODE_PATH_COLOR = np.array((13, 212, 212))
 
 node_radius = 30
 
@@ -136,12 +138,14 @@ is_grabing = False
 is_displacing = False
 is_connecting = False
 shift = False
+alt = False
 displacement_start = Vector(0, 0)
 grabed = Node(Vector(-10e8, -10e8))
 paused = False
-connecting_from = Node(Vector(-10e8, -10e8))
+connecting_from = None  # Node(Vector(-10e8, -10e8))
 
 Objects = []
+path = []
 camera_pos = Vector(0, 0)
 camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
@@ -162,6 +166,11 @@ while running:
                         for o in Objects:
                             if obj in o.destinations:
                                 o.destinations.remove(obj)
+                    elif alt:
+                        if obj in path:
+                            path.remove(obj)
+                        else:
+                            path.append(obj)
                     else:
                         is_grabing = True
                         grabed = obj
@@ -173,6 +182,11 @@ while running:
         if event.type == KEYUP and event.key == pygame.K_LSHIFT:
             shift = False
 
+        if event.type == KEYDOWN and event.mod & pygame.KMOD_LALT:
+            alt = True
+        if event.type == KEYUP and event.key == pygame.K_LALT:
+            alt = False
+
         if event.type == MOUSEBUTTONDOWN and event.button == 2:
             mouse_pos = get_mouse_pos()
             displacement_start = None
@@ -182,7 +196,8 @@ while running:
                         if obj in o.destinations:
                             o.destinations.remove(obj)
                     Objects.remove(obj)
-
+                    if obj in path:
+                        path.remove(obj)
                     break
             else:
                 continue  # this functional currently turned off
@@ -195,19 +210,32 @@ while running:
             mouse_pos = get_mouse_pos()
             for obj in Objects:
                 if (mouse_pos - obj.position).get_length() < node_radius:
-                    a = [Vector(0, -node_radius),
-                         Vector(0, node_radius),
-                         Vector(-node_radius, 0),
-                         Vector(node_radius, 0)]
-                    new = Node(a[randint(0, 3)] + mouse_pos)
-                    new.destinations.append(obj)
-                    obj.destinations.append(new)
-                    Objects.append(new)
+                    connecting_from = obj
 
                     break
             else:
                 Objects.append(Node(mouse_pos))
                 continue
+
+        if event.type == MOUSEBUTTONUP and event.button == 3:
+            mouse_pos = get_mouse_pos()
+            for obj in Objects:
+                if (mouse_pos - obj.position).get_length() < node_radius:
+                    if obj == connecting_from:
+                        a = [Vector(0, -node_radius),
+                             Vector(0, node_radius),
+                             Vector(-node_radius, 0),
+                             Vector(node_radius, 0)]
+                        new = Node(a[randint(0, 3)] + mouse_pos)
+                        new.destinations.append(obj)
+                        obj.destinations.append(new)
+                        Objects.append(new)
+                        break
+                    elif connecting_from != None:
+                        connecting_from.destinations.append(obj)
+                        obj.destinations.append(connecting_from)
+                        connecting_from = None
+                        break
 
         if event.type == MOUSEWHEEL:
             scale = max(min((scale * 10 - event.y) / 10, 10), 1)
@@ -220,7 +248,9 @@ while running:
         if event.type == KEYDOWN and event.key == pygame.K_c:
             for obj in Objects:
                 obj.destinations.clear()
+            path.clear()
             Objects.clear()
+            connecting_from = None
     # Processing
     for obj in Objects:
         if paused:
@@ -233,7 +263,6 @@ while running:
         for another in Objects:
             if another == obj:
                 continue
-
             obj.interact_with(another)
 
     for obj in Objects:
@@ -257,10 +286,11 @@ while running:
         camera_pos += displacement
         camera_center = camera_pos + camera_size / 2
     # Drawing
-
     display_surface.fill(BLACK)
     for obj in Objects:
         obj.draw(display_surface, NODE_COLOR, node_radius)
+    for obj in path:
+        obj.draw(display_surface, NODE_PATH_COLOR, node_radius)
 
     clock.tick(FPS)
     pygame.display.update()
