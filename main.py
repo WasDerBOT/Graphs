@@ -3,8 +3,14 @@ import pygame_widgets
 from pygame.locals import *
 from random import randint
 from pygame_widgets.textbox import TextBox
+import sys
+from button import Button
 
 pygame.init()
+size = width, height = 800, 600
+screen = pygame.display.set_mode(size)
+pygame.mixer.music.load('Tetris.mp3')
+pygame.mixer.music.play(-1)
 FPS = 60
 screen_width = 800
 screen_height = 600
@@ -196,165 +202,268 @@ camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
 scale = 1
 
-running = True
 
-while running:
-    events = pygame.event.get()
-    pygame_widgets.update(events)
-    for event in events:
-        if event.type == QUIT:
-            running = False
-        if event.type == MOUSEBUTTONDOWN and event.button == 1:
-            mouse_pos = get_mouse_pos()
+def get_font(size):
+    return pygame.font.SysFont('arial', size)
 
-            for obj in Objects:
-                if (mouse_pos - obj.position).get_length() < node_radius:
-                    if shift:
-                        obj.destinations.clear()
-                        obj.distances.clear()
+
+def menu():
+    while True:
+        pygame.display.set_caption('Меню')
+        screen.fill((0, 0, 0))
+        MENU_TEXT = get_font(125).render('Меню', True, 'White')
+        MENU_RECT = MENU_TEXT.get_rect(center=(400, 150))
+        screen.blit(MENU_TEXT, MENU_RECT)
+        PLAY_BUTTON = Button(image=None, pos=(400, 275), text_input='ИГРАТЬ', font=get_font(75), base_color='White',
+                             hovering_color='Green')
+        OPTIONS_BUTTON = Button(image=None, pos=(400, 350), text_input='НАСТРОЙКИ', font=get_font(75),
+                                base_color='White', hovering_color='Green')
+        TABLE_BUTTON = Button(image=None, pos=(400, 425), text_input='ТАБЛИЦА ЛИДЕРОВ', font=get_font(75),
+                              base_color='White', hovering_color='Green')
+        QUIT_BUTTON = Button(image=None, pos=(400, 500), text_input='ВЫХОД', font=get_font(75), base_color='White',
+                             hovering_color='Green')
+        for button in [PLAY_BUTTON, OPTIONS_BUTTON, TABLE_BUTTON, QUIT_BUTTON]:
+            button.changeColor(pygame.mouse.get_pos())
+            button.update(screen)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if PLAY_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    play()
+                if OPTIONS_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    options()
+
+                if TABLE_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    table()
+                if QUIT_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    pygame.quit()
+                    sys.exit()
+        pygame.display.update()
+
+
+def play():
+    running = True
+
+    while running:
+        global is_displacing
+        global is_inputting
+        global inputed
+        global paused
+        global is_grabing
+        global connecting_from
+        global grabed
+        global shift
+        global alt
+        global scale
+        events = pygame.event.get()
+        pygame_widgets.update(events)
+        for event in events:
+            if event.type == QUIT:
+                running = False
+            if event.type == MOUSEBUTTONDOWN and event.button == 1:
+                mouse_pos = get_mouse_pos()
+
+                for obj in Objects:
+                    if (mouse_pos - obj.position).get_length() < node_radius:
+                        if shift:
+                            obj.destinations.clear()
+                            obj.distances.clear()
+                            for o in Objects:
+                                if obj in o.destinations:
+                                    o.distances.pop(o.destinations.index(obj))
+                                    o.destinations.remove(obj)
+                        elif alt:
+                            if obj in path:
+                                path.remove(obj)
+                            else:
+                                path.append(obj)
+                        else:
+                            is_grabing = True
+                            grabed = obj
+
+                        break
+
+            if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LSHIFT:
+                shift = True
+            if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_LSHIFT:
+                shift = False
+
+            if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LALT:
+                alt = True
+            if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_LALT:
+                alt = False
+
+            if event.type == MOUSEBUTTONDOWN and event.button == 2:
+                mouse_pos = get_mouse_pos()
+                displacement_start = None
+                for obj in Objects:
+                    if (mouse_pos - obj.position).get_length() < node_radius:
                         for o in Objects:
                             if obj in o.destinations:
                                 o.distances.pop(o.destinations.index(obj))
                                 o.destinations.remove(obj)
-                    elif alt:
+                        Objects.remove(obj)
                         if obj in path:
                             path.remove(obj)
-                        else:
-                            path.append(obj)
-                    else:
-                        is_grabing = True
-                        grabed = obj
+                        break
+                else:
+                    continue  # this functional currently turned off
+                    is_displacing = True
+                    displacement_start = Vector(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
+            if event.type == MOUSEBUTTONUP and event.button == 2:
+                is_displacing = False
 
-                    break
+            if event.type == MOUSEBUTTONDOWN and event.button == 3:
+                mouse_pos = get_mouse_pos()
+                for obj in Objects:
+                    if (mouse_pos - obj.position).get_length() < node_radius:
+                        connecting_from = obj
+                        break
+                else:
+                    Objects.append(Node(mouse_pos))
+                    continue
 
-        if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LSHIFT:
-            shift = True
-        if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_LSHIFT:
-            shift = False
+            if event.type == MOUSEBUTTONUP and event.button == 3:
+                mouse_pos = get_mouse_pos()
+                for obj in Objects:
+                    if (mouse_pos - obj.position).get_length() < node_radius:
+                        if connecting_from is not None:
+                            is_inputting = True
+                        connecting_to = obj
+                        break
 
-        if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LALT:
-            alt = True
-        if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_LALT:
-            alt = False
+            if event.type == MOUSEWHEEL:
+                scale = max(min((scale * 10 - event.y) / 10, 10), 1)
 
-        if event.type == MOUSEBUTTONDOWN and event.button == 2:
+            if event.type == MOUSEBUTTONUP and grabed:
+                grabed = None
+                is_grabing = False
+            if event.type == KEYDOWN and event.key == pygame.K_q:
+                paused = not paused
+            if event.type == KEYDOWN and event.key == pygame.K_c:
+                for obj in Objects:
+                    obj.destinations.clear()
+                    obj.distances.clear()
+                path.clear()
+                Objects.clear()
+                connecting_from = None
+        # Processing
+        for obj in Objects:
+            if paused:
+                break
+            obj.velocity *= 0.8
+
+            # Kinda gravity
+            # obj.velocity += Vector(0, 1) * 30 / FPS
+
+            for another in Objects:
+                if another == obj:
+                    continue
+                obj.interact_with(another)
+
+        for obj in Objects:
+            if paused:
+                break
+            if abs(obj.position.get_length()) > 10000:
+                Objects.remove(obj)
+            obj.process()
+
+        if is_grabing:
             mouse_pos = get_mouse_pos()
-            displacement_start = None
-            for obj in Objects:
-                if (mouse_pos - obj.position).get_length() < node_radius:
-                    for o in Objects:
-                        if obj in o.destinations:
-                            o.distances.pop(o.destinations.index(obj))
-                            o.destinations.remove(obj)
-                    Objects.remove(obj)
-                    if obj in path:
-                        path.remove(obj)
-                    break
-            else:
-                continue  # this functional currently turned off
-                is_displacing = True
-                displacement_start = Vector(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
-        if event.type == MOUSEBUTTONUP and event.button == 2:
-            is_displacing = False
 
-        if event.type == MOUSEBUTTONDOWN and event.button == 3:
-            mouse_pos = get_mouse_pos()
-            for obj in Objects:
-                if (mouse_pos - obj.position).get_length() < node_radius:
-                    connecting_from = obj
-                    break
-            else:
-                Objects.append(Node(mouse_pos))
-                continue
+            grabed.velocity = mouse_pos - grabed.position
+            if paused:
+                grabed.position = mouse_pos
 
-        if event.type == MOUSEBUTTONUP and event.button == 3:
-            mouse_pos = get_mouse_pos()
-            for obj in Objects:
-                if (mouse_pos - obj.position).get_length() < node_radius:
-                    if connecting_from is not None:
-                        is_inputting = True
-                    connecting_to = obj
-                    break
+        if is_displacing:
+            current = Vector(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
+            displacement = current - displacement_start
+            displacement_start = current.__copy__()
+            camera_pos += displacement
+            camera_center = camera_pos + camera_size / 2
+        # Drawing
+        display_surface.fill(BLACK)
+        for obj in Objects:
+            obj.draw(display_surface, NODE_COLOR, node_radius)
+        for obj in path:
+            obj.draw(display_surface, NODE_PATH_COLOR, node_radius)
 
-        if event.type == MOUSEWHEEL:
-            scale = max(min((scale * 10 - event.y) / 10, 10), 1)
+        if is_inputting:
+            textbox.draw()
+        if inputed:
+            inputed = False
+            if connecting_to == connecting_from:
+                a = [Vector(0, -node_radius),
+                     Vector(0, node_radius),
+                     Vector(-node_radius, 0),
+                     Vector(node_radius, 0)]
 
-        if event.type == MOUSEBUTTONUP and grabed:
-            grabed = None
-            is_grabing = False
-        if event.type == KEYDOWN and event.key == pygame.K_q:
-            paused = not paused
-        if event.type == KEYDOWN and event.key == pygame.K_c:
-            for obj in Objects:
-                obj.destinations.clear()
-                obj.distances.clear()
-            path.clear()
-            Objects.clear()
+                new = Node(a[randint(0, 3)] + mouse_pos)
+                new.destinations.append(connecting_to)
+                new.distances.append(current_dist)
+                connecting_to.destinations.append(new)
+                connecting_to.distances.append(current_dist)
+                Objects.append(new)
+            elif connecting_from is not None:
+                connecting_from.distances.append(current_dist)
+                connecting_from.destinations.append(connecting_to)
+                connecting_to.destinations.append(connecting_from)
+                connecting_to.distances.append(current_dist)
+            connecting_to = None
             connecting_from = None
-    # Processing
-    for obj in Objects:
-        if paused:
-            break
-        obj.velocity *= 0.8
 
-        # Kinda gravity
-        # obj.velocity += Vector(0, 1) * 30 / FPS
+        clock.tick(FPS)
+        pygame.display.update()
 
-        for another in Objects:
-            if another == obj:
-                continue
-            obj.interact_with(another)
 
-    for obj in Objects:
-        if paused:
-            break
-        if abs(obj.position.get_length()) > 10000:
-            Objects.remove(obj)
-        obj.process()
+def options():
+    music_check = True
 
-    if is_grabing:
-        mouse_pos = get_mouse_pos()
+    while True:
+        pygame.display.set_caption('Настройки')
+        screen.fill((0, 0, 0))
+        OPTIONS_TEXT = get_font(125).render('Настройки', True, 'White')
+        OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(400, 150))
+        screen.blit(OPTIONS_TEXT, OPTIONS_RECT)
 
-        grabed.velocity = mouse_pos - grabed.position
-        if paused:
-            grabed.position = mouse_pos
+        BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
+                                 hovering_color='Green')
+        TURN_ON_BUTTON = Button(image=None, pos=(400, 350), text_input='ВКЛЮЧИТЬ МУЗЫКУ', font=get_font(75),
+                                base_color='White', hovering_color='Green')
+        TURN_OFF_BUTTON = Button(image=None, pos=(400, 350), text_input='ВЫКЛЮЧИТЬ МУЗЫКУ', font=get_font(75),
+                                 base_color='White', hovering_color='Green')
+        BACK_BUTTON.changeColor(pygame.mouse.get_pos())
+        BACK_BUTTON.update(screen)
 
-    if is_displacing:
-        current = Vector(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
-        displacement = current - displacement_start
-        displacement_start = current.__copy__()
-        camera_pos += displacement
-        camera_center = camera_pos + camera_size / 2
-    # Drawing
-    display_surface.fill(BLACK)
-    for obj in Objects:
-        obj.draw(display_surface, NODE_COLOR, node_radius)
-    for obj in path:
-        obj.draw(display_surface, NODE_PATH_COLOR, node_radius)
+        if music_check:
+            TURN_OFF_BUTTON.changeColor(pygame.mouse.get_pos())
+            TURN_OFF_BUTTON.update(screen)
+            TURN_ON_BUTTON.reverse()
+        else:
+            TURN_ON_BUTTON.changeColor(pygame.mouse.get_pos())
+            TURN_ON_BUTTON.update(screen)
 
-    if is_inputting:
-        textbox.draw()
-    if inputed:
-        inputed = False
-        if connecting_to == connecting_from:
-            a = [Vector(0, -node_radius),
-                 Vector(0, node_radius),
-                 Vector(-node_radius, 0),
-                 Vector(node_radius, 0)]
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    menu()
+                if TURN_OFF_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    music_check = False
 
-            new = Node(a[randint(0, 3)] + mouse_pos)
-            new.destinations.append(connecting_to)
-            new.distances.append(current_dist)
-            connecting_to.destinations.append(new)
-            connecting_to.distances.append(current_dist)
-            Objects.append(new)
-        elif connecting_from is not None:
-            connecting_from.distances.append(current_dist)
-            connecting_from.destinations.append(connecting_to)
-            connecting_to.destinations.append(connecting_from)
-            connecting_to.distances.append(current_dist)
-        connecting_to = None
-        connecting_from = None
+                    pygame.mixer.music.pause()
+                if TURN_ON_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    music_check = True
+                    pygame.mixer.music.unpause()
+        pygame.display.update()
 
-    clock.tick(FPS)
-    pygame.display.update()
+
+def table():
+    pass
+
+
+menu()
