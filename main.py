@@ -130,14 +130,16 @@ def draw_connection(surface, node_color, a: Node, b: Node):
     width /= scale
     width = int(width)
     text_pos = (a.position + b.position) / 2
+    FONT = pygame.font.Font('Cinematic.otf', size=int(32/scale))
     text_surface = FONT.render(str(dist), True, (255, 255, 255))
 
     ta = (a.position - camera_center) / scale + camera_center
     tb = (b.position - camera_center) / scale + camera_center
+
     direction = (tb - ta).get_normalized().get_tuple()
     if a.position.get_tuple()[0] > b.position.get_tuple()[0]:
         perp = Vector(-direction[1], direction[0]).get_normalized()
-        display_surface.blit(text_surface, (text_pos + perp * 30).get_tuple())
+        display_surface.blit(text_surface, ((text_pos + perp * 30 - camera_center) / scale + camera_center).get_tuple())
 
     pygame.draw.line(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
                      ta.get_tuple(), tb.get_tuple(), width)
