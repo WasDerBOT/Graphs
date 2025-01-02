@@ -1,7 +1,6 @@
 import pygame
 from pygame.locals import *
 from random import randint
-import numpy as np
 
 pygame.init()
 FPS = 60
@@ -12,9 +11,12 @@ pygame.display.set_caption("Graphs")
 clock = pygame.time.Clock()
 
 BLACK = (0, 0, 0)
+NODE_SUCCESSFUL_PATH = (0, 153, 76)
+NODE_WRONG_PATH = (194, 36, 25)
+NODE_COLOR = (125, 125, 125)
+NODE_PATH_COLOR = (13, 212, 212)
 
-NODE_COLOR = np.array((0, 153, 76))
-NODE_PATH_COLOR = np.array((13, 212, 212))
+FONT = pygame.font.Font('Cinematic.otf', size=32)
 
 node_radius = 30
 
@@ -76,9 +78,10 @@ mx = 0
 
 
 class Node:
-    def __init__(self, position: Vector, destinations=[]):
+    def __init__(self, position: Vector, destinations=[], distances=[]):
         self.position = position
         self.destinations = destinations.copy()
+        self.distances = distances.copy()
         self.velocity = Vector(0, 0)
 
     def __copy__(self):
@@ -119,13 +122,23 @@ class Node:
 
 
 def draw_connection(surface, node_color, a: Node, b: Node):
+    dist = a.distances[a.destinations.index(b)]
+
     if a.position.get_tuple() == b.position.get_tuple():
         return
     width = int(node_radius * 0.3)
     width /= scale
     width = int(width)
+    text_pos = (a.position + b.position) / 2
+    text_surface = FONT.render(str(dist), True, (255, 255, 255))
+
     ta = (a.position - camera_center) / scale + camera_center
     tb = (b.position - camera_center) / scale + camera_center
+    direction = (tb - ta).get_normalized().get_tuple()
+    if a.position.get_tuple()[0] > b.position.get_tuple()[0]:
+        perp = Vector(-direction[1], direction[0]).get_normalized()
+        display_surface.blit(text_surface, (text_pos + perp * 30).get_tuple())
+
     pygame.draw.line(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
                      ta.get_tuple(), tb.get_tuple(), width)
     pygame.draw.circle(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
@@ -142,7 +155,7 @@ alt = False
 displacement_start = Vector(0, 0)
 grabed = Node(Vector(-10e8, -10e8))
 paused = False
-connecting_from = None  # Node(Vector(-10e8, -10e8))
+connecting_from = None
 
 Objects = []
 path = []
@@ -152,6 +165,7 @@ camera_center = camera_pos + camera_size / 2
 scale = 1
 
 running = True
+
 while running:
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -163,8 +177,10 @@ while running:
                 if (mouse_pos - obj.position).get_length() < node_radius:
                     if shift:
                         obj.destinations.clear()
+                        obj.distances.clear()
                         for o in Objects:
                             if obj in o.destinations:
+                                o.distances.pop(o.destinations.index(obj))
                                 o.destinations.remove(obj)
                     elif alt:
                         if obj in path:
@@ -194,6 +210,7 @@ while running:
                 if (mouse_pos - obj.position).get_length() < node_radius:
                     for o in Objects:
                         if obj in o.destinations:
+                            o.distances.pop(o.destinations.index(obj))
                             o.destinations.remove(obj)
                     Objects.remove(obj)
                     if obj in path:
@@ -211,7 +228,6 @@ while running:
             for obj in Objects:
                 if (mouse_pos - obj.position).get_length() < node_radius:
                     connecting_from = obj
-
                     break
             else:
                 Objects.append(Node(mouse_pos))
@@ -228,12 +244,16 @@ while running:
                              Vector(node_radius, 0)]
                         new = Node(a[randint(0, 3)] + mouse_pos)
                         new.destinations.append(obj)
+                        new.distances.append(10)
                         obj.destinations.append(new)
+                        obj.distances.append(10)
                         Objects.append(new)
                         break
-                    elif connecting_from != None:
+                    elif connecting_from is not None:
+                        connecting_from.distances.append(10)
                         connecting_from.destinations.append(obj)
                         obj.destinations.append(connecting_from)
+                        obj.distances.append(10)
                         break
             connecting_from = None
 
@@ -248,6 +268,7 @@ while running:
         if event.type == KEYDOWN and event.key == pygame.K_c:
             for obj in Objects:
                 obj.destinations.clear()
+                obj.distances.clear()
             path.clear()
             Objects.clear()
             connecting_from = None
