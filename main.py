@@ -1,6 +1,8 @@
 import pygame
+import pygame_widgets
 from pygame.locals import *
 from random import randint
+from pygame_widgets.textbox import TextBox
 
 pygame.init()
 FPS = 60
@@ -8,8 +10,10 @@ screen_width = 800
 screen_height = 600
 display_surface = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Graphs")
+
 clock = pygame.time.Clock()
 
+current_dist = 10
 BLACK = (0, 0, 0)
 NODE_SUCCESSFUL_PATH = (0, 153, 76)
 NODE_WRONG_PATH = (194, 36, 25)
@@ -19,6 +23,28 @@ NODE_PATH_COLOR = (13, 212, 212)
 FONT = pygame.font.Font('Cinematic.otf', size=32)
 
 node_radius = 30
+
+inputed = False
+
+
+def set_dist():
+    global current_dist
+    global inputed
+    global is_inputting
+    is_inputting = False
+    inputed = True
+
+    try:
+        current_dist = int(textbox.getText())
+        textbox.setText("")
+    except ValueError:
+        print("Type number!")
+
+
+
+textbox = TextBox(display_surface, 255, 100, 300, 100, fontSize=40,
+                  borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
+                  radius=10, borderThickness=10, placeholderText="Введите длину", onSubmit=set_dist)
 
 
 def get_mouse_pos():
@@ -103,6 +129,8 @@ class Node:
         r = other.position - self.position
         direct = r.get_normalized()
         length = r.get_length() / (2 * node_radius)
+        if other in self.destinations:
+            length /= min(max(1, self.distances[self.destinations.index(other)]), 30)**0.25
         force = Vector(0, 0)
         if other in self.destinations or self in other.destinations:
             force = direct * length ** 3
@@ -130,7 +158,7 @@ def draw_connection(surface, node_color, a: Node, b: Node):
     width /= scale
     width = int(width)
     text_pos = (a.position + b.position) / 2
-    FONT = pygame.font.Font('Cinematic.otf', size=int(32/scale))
+    FONT = pygame.font.Font('Cinematic.otf', size=int(32 / scale))
     text_surface = FONT.render(str(dist), True, (255, 255, 255))
 
     ta = (a.position - camera_center) / scale + camera_center
@@ -149,6 +177,7 @@ def draw_connection(surface, node_color, a: Node, b: Node):
                        tb.get_tuple(), width / 2)
 
 
+is_inputting = False
 is_grabing = False
 is_displacing = False
 is_connecting = False
@@ -158,6 +187,7 @@ displacement_start = Vector(0, 0)
 grabed = Node(Vector(-10e8, -10e8))
 paused = False
 connecting_from = None
+connecting_to = None
 
 Objects = []
 path = []
@@ -169,7 +199,9 @@ scale = 1
 running = True
 
 while running:
-    for event in pygame.event.get():
+    events = pygame.event.get()
+    pygame_widgets.update(events)
+    for event in events:
         if event.type == QUIT:
             running = False
         if event.type == MOUSEBUTTONDOWN and event.button == 1:
@@ -195,14 +227,14 @@ while running:
 
                     break
 
-        if event.type == KEYDOWN and event.mod & pygame.KMOD_LSHIFT:
+        if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LSHIFT:
             shift = True
-        if event.type == KEYUP and event.key == pygame.K_LSHIFT:
+        if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_LSHIFT:
             shift = False
 
-        if event.type == KEYDOWN and event.mod & pygame.KMOD_LALT:
+        if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LALT:
             alt = True
-        if event.type == KEYUP and event.key == pygame.K_LALT:
+        if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_LALT:
             alt = False
 
         if event.type == MOUSEBUTTONDOWN and event.button == 2:
@@ -239,25 +271,10 @@ while running:
             mouse_pos = get_mouse_pos()
             for obj in Objects:
                 if (mouse_pos - obj.position).get_length() < node_radius:
-                    if obj == connecting_from:
-                        a = [Vector(0, -node_radius),
-                             Vector(0, node_radius),
-                             Vector(-node_radius, 0),
-                             Vector(node_radius, 0)]
-                        new = Node(a[randint(0, 3)] + mouse_pos)
-                        new.destinations.append(obj)
-                        new.distances.append(10)
-                        obj.destinations.append(new)
-                        obj.distances.append(10)
-                        Objects.append(new)
-                        break
-                    elif connecting_from is not None:
-                        connecting_from.distances.append(10)
-                        connecting_from.destinations.append(obj)
-                        obj.destinations.append(connecting_from)
-                        obj.distances.append(10)
-                        break
-            connecting_from = None
+                    if connecting_from is not None:
+                        is_inputting = True
+                    connecting_to = obj
+                    break
 
         if event.type == MOUSEWHEEL:
             scale = max(min((scale * 10 - event.y) / 10, 10), 1)
@@ -314,6 +331,30 @@ while running:
         obj.draw(display_surface, NODE_COLOR, node_radius)
     for obj in path:
         obj.draw(display_surface, NODE_PATH_COLOR, node_radius)
+
+    if is_inputting:
+        textbox.draw()
+    if inputed:
+        inputed = False
+        if connecting_to == connecting_from:
+            a = [Vector(0, -node_radius),
+                 Vector(0, node_radius),
+                 Vector(-node_radius, 0),
+                 Vector(node_radius, 0)]
+
+            new = Node(a[randint(0, 3)] + mouse_pos)
+            new.destinations.append(connecting_to)
+            new.distances.append(current_dist)
+            connecting_to.destinations.append(new)
+            connecting_to.distances.append(current_dist)
+            Objects.append(new)
+        elif connecting_from is not None:
+            connecting_from.distances.append(current_dist)
+            connecting_from.destinations.append(connecting_to)
+            connecting_to.destinations.append(connecting_from)
+            connecting_to.distances.append(current_dist)
+        connecting_to = None
+        connecting_from = None
 
     clock.tick(FPS)
     pygame.display.update()
