@@ -27,6 +27,8 @@ NODE_SUCCESSFUL_PATH = (0, 153, 76)
 NODE_WRONG_PATH = (194, 36, 25)
 NODE_COLOR = (125, 125, 125)
 NODE_PATH_COLOR = (13, 212, 212)
+NODE_FINISH_COLOR = (245, 236, 66)
+NODE_START_COLOR = (164, 245, 66)
 
 FONT = pygame.font.Font('Cinematic.otf', size=32)
 
@@ -130,7 +132,23 @@ class Node:
         pygame.draw.circle(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
                            position.get_tuple(), int(radius), int(radius * 0.3))
         for dest in self.destinations:
+
             draw_connection(surface, node_color, self, dest)
+            if dest is path_start or dest is path_finish:
+                dest.draw(surface, node_color, radius)
+
+        if self is path_start:
+            FONT = pygame.font.Font('Cinematic.otf', size=int(50 / scale))
+            text_surface = FONT.render(str("S"), True, (255, 255, 255))
+            display_surface.blit(text_surface,
+                                 ((self.position + Vector(-node_radius * 0.25,
+                                                          -node_radius * 0.75) - camera_center) / scale + camera_center).get_tuple())
+        if self is path_finish:
+            FONT = pygame.font.Font('Cinematic.otf', size=int(50 / scale))
+            text_surface = FONT.render(str("F"), True, (255, 255, 255))
+            display_surface.blit(text_surface,
+                                 ((self.position + Vector(-node_radius * 0.25,
+                                                          -node_radius * 0.75) - camera_center) / scale + camera_center).get_tuple())
 
     def interact_with(self, other):
         r = other.position - self.position
@@ -200,7 +218,7 @@ path_start = None
 path_finish = None
 
 Objects = []
-path = []
+right_path = []
 camera_pos = Vector(0, 0)
 camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
@@ -290,7 +308,7 @@ def play():
         global shift
         global alt
         global scale
-        global path
+        global right_path
         global path_start
         global path_finish
         global right_mouse_button_mode
@@ -312,10 +330,10 @@ def play():
                                     o.distances.pop(o.destinations.index(obj))
                                     o.destinations.remove(obj)
                         elif alt:
-                            if obj in path:
-                                path.remove(obj)
+                            if obj in right_path:
+                                right_path.remove(obj)
                             else:
-                                path.append(obj)
+                                right_path.append(obj)
                         else:
                             is_grabing = True
                             grabed = obj
@@ -342,8 +360,8 @@ def play():
                                 o.distances.pop(o.destinations.index(obj))
                                 o.destinations.remove(obj)
                         Objects.remove(obj)
-                        if obj in path:
-                            path.remove(obj)
+                        if obj in right_path:
+                            right_path.remove(obj)
                         break
                 else:
                     continue  # this functional currently turned off
@@ -397,19 +415,19 @@ def play():
 
             if event.type == KEYDOWN and event.key == pygame.K_e:
                 temp = Graph(Objects)
-                path.clear()
+                right_path.clear()
                 if path_start not in Objects:
                     path_start = None
                 if path_finish not in Objects:
                     path_finish = None
                 if path_start is not None and path_finish is not None:
-                    path, dist = temp.findPath(path_start, path_finish)
+                    right_path, dist = temp.findPath(path_start, path_finish)
 
             if event.type == KEYDOWN and event.key == pygame.K_c:
                 for obj in Objects:
                     obj.destinations.clear()
                     obj.distances.clear()
-                path.clear()
+                right_path.clear()
                 Objects.clear()
                 connecting_from = None
         # Processing
@@ -450,8 +468,8 @@ def play():
         display_surface.fill(BLACK)
         for obj in Objects:
             obj.draw(display_surface, NODE_COLOR, node_radius)
-        for obj in path:
-            obj.draw(display_surface, NODE_PATH_COLOR, node_radius)
+        for obj in right_path:
+            obj.draw(display_surface, NODE_SUCCESSFUL_PATH, node_radius)
 
         if is_inputting:
             textbox.draw()
