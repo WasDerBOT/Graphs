@@ -188,6 +188,7 @@ is_inputting = False
 is_grabing = False
 is_displacing = False
 is_connecting = False
+right_mouse_button_mode = 0
 shift = False
 alt = False
 displacement_start = Vector(0, 0)
@@ -195,6 +196,8 @@ grabed = Node(Vector(-10e8, -10e8))
 paused = False
 connecting_from = None
 connecting_to = None
+path_start = None
+path_finish = None
 
 Objects = []
 path = []
@@ -288,6 +291,9 @@ def play():
         global alt
         global scale
         global path
+        global path_start
+        global path_finish
+        global right_mouse_button_mode
         events = pygame.event.get()
         pygame_widgets.update(events)
         for event in events:
@@ -350,7 +356,13 @@ def play():
                 mouse_pos = get_mouse_pos()
                 for obj in Objects:
                     if (mouse_pos - obj.position).get_length() < node_radius:
-                        connecting_from = obj
+                        if right_mouse_button_mode == 0:
+                            connecting_from = obj
+                        elif right_mouse_button_mode == 1:
+                            path_start = obj
+                        elif right_mouse_button_mode == 2:
+                            path_finish = obj
+
                         break
                 else:
                     Objects.append(Node(mouse_pos))
@@ -373,12 +385,25 @@ def play():
                 is_grabing = False
             if event.type == KEYDOWN and event.key == pygame.K_q:
                 paused = not paused
+            if event.type == KEYDOWN and event.key == pygame.K_SPACE:
+                right_mouse_button_mode += 1
+                right_mouse_button_mode %= 3
+                if right_mouse_button_mode == 0:
+                    print("Connecting mode")
+                elif right_mouse_button_mode == 1:
+                    print("Start setting mode")
+                elif right_mouse_button_mode == 2:
+                    print("Finish setting mode")
+
             if event.type == KEYDOWN and event.key == pygame.K_e:
-                print("LOG")
                 temp = Graph(Objects)
                 path.clear()
-                path, dist = temp.findPath(Objects[0], Objects[-1])
-                print(dist)
+                if path_start not in Objects:
+                    path_start = None
+                if path_finish not in Objects:
+                    path_finish = None
+                if path_start is not None and path_finish is not None:
+                    path, dist = temp.findPath(path_start, path_finish)
 
             if event.type == KEYDOWN and event.key == pygame.K_c:
                 for obj in Objects:
