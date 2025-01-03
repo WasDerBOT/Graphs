@@ -3,6 +3,7 @@ import pygame_widgets
 from pygame.locals import *
 from random import randint
 from pygame_widgets.textbox import TextBox
+from pygame_widgets.slider import Slider
 import sys
 from button import Button
 
@@ -10,6 +11,7 @@ pygame.init()
 size = width, height = 800, 600
 screen = pygame.display.set_mode(size)
 pygame.mixer.music.load('Tetris.mp3')
+pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)
 FPS = 60
 screen_width = 800
@@ -31,12 +33,11 @@ FONT = pygame.font.Font('Cinematic.otf', size=32)
 node_radius = 30
 
 inputed = False
-
+music_check = True
+check_slider = True
 
 def set_dist():
-    global current_dist
-    global inputed
-    global is_inputting
+    global current_dist, inputed, is_inputting
     is_inputting = False
     inputed = True
 
@@ -247,16 +248,7 @@ def play():
     running = True
 
     while running:
-        global is_displacing
-        global is_inputting
-        global inputed
-        global paused
-        global is_grabing
-        global connecting_from
-        global grabed
-        global shift
-        global alt
-        global scale
+        global is_displacing, is_inputting, inputed, paused, is_grabing, connecting_from, grabed, shift, alt, scale
         events = pygame.event.get()
         pygame_widgets.update(events)
         for event in events:
@@ -419,20 +411,25 @@ def play():
 
 
 def options():
-    music_check = True
-
+    global music_check, check_slider, output, slider
+    if check_slider:
+        slider = Slider(screen, 100, 150, 600, 40, min=0, max=100, step=1, colour=(255, 255, 255),
+                        handleColour=(122, 122, 122))
+        output = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255), colour=(0, 0, 0))
+        output.disable()
+        check_slider = False
     while True:
         pygame.display.set_caption('Настройки')
         screen.fill((0, 0, 0))
         OPTIONS_TEXT = get_font(125).render('Настройки', True, 'White')
-        OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(400, 150))
+        OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(400, 70))
         screen.blit(OPTIONS_TEXT, OPTIONS_RECT)
 
-        BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
+        BACK_BUTTON = Button(image=None, pos=(400, 550), text_input='НАЗАД', font=get_font(75), base_color='White',
                                  hovering_color='Green')
-        TURN_ON_BUTTON = Button(image=None, pos=(400, 350), text_input='ВКЛЮЧИТЬ МУЗЫКУ', font=get_font(75),
+        TURN_ON_BUTTON = Button(image=None, pos=(400, 450), text_input='ВКЛЮЧИТЬ МУЗЫКУ', font=get_font(75),
                                 base_color='White', hovering_color='Green')
-        TURN_OFF_BUTTON = Button(image=None, pos=(400, 350), text_input='ВЫКЛЮЧИТЬ МУЗЫКУ', font=get_font(75),
+        TURN_OFF_BUTTON = Button(image=None, pos=(400, 450), text_input='ВЫКЛЮЧИТЬ МУЗЫКУ', font=get_font(75),
                                  base_color='White', hovering_color='Green')
         BACK_BUTTON.changeColor(pygame.mouse.get_pos())
         BACK_BUTTON.update(screen)
@@ -451,6 +448,7 @@ def options():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    textbox.show()
                     menu()
                 if TURN_OFF_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     music_check = False
@@ -459,6 +457,10 @@ def options():
                 if TURN_ON_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     music_check = True
                     pygame.mixer.music.unpause()
+        output.setText(f'Громкость музыки: {slider.getValue()}%')
+        pygame.mixer.music.set_volume(slider.getValue() / 100)
+        textbox.hide()
+        pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
 
