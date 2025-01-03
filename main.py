@@ -1,9 +1,11 @@
+import sys
+from random import randint
+
 import pygame
 import pygame_widgets
 from pygame.locals import *
-from random import randint
 from pygame_widgets.textbox import TextBox
-import sys
+
 from button import Button
 
 pygame.init()
@@ -45,7 +47,6 @@ def set_dist():
         textbox.setText("")
     except ValueError:
         print("Type number!")
-
 
 
 textbox = TextBox(display_surface, 255, 100, 300, 100, fontSize=40,
@@ -136,7 +137,7 @@ class Node:
         direct = r.get_normalized()
         length = r.get_length() / (2 * node_radius)
         if other in self.destinations:
-            length /= min(max(1, self.distances[self.destinations.index(other)]), 30)**0.25
+            length /= min(max(1, self.distances[self.destinations.index(other)]), 30) ** 0.25
         force = Vector(0, 0)
         if other in self.destinations or self in other.destinations:
             force = direct * length ** 3
@@ -203,6 +204,35 @@ camera_center = camera_pos + camera_size / 2
 scale = 1
 
 
+class Graph:
+    def __init__(self, Nodes):
+        self.Nodes = Nodes
+        self.visited = []
+
+    def __find__(self, vertex: Node, finish: Node, current_path: list, current_path_dist: int):
+        further_paths = []
+        if vertex is finish:
+            return [current_path, current_path_dist].copy()
+        for dest in vertex.destinations:
+            if dest in current_path:
+                continue
+
+            temp = self.__find__(dest, finish, (current_path + [dest]).copy(),
+                                 current_path_dist + vertex.distances[vertex.destinations.index(dest)])
+            if finish in temp or True:
+                further_paths.append(temp)
+
+        further_paths = sorted(further_paths, key=lambda x: x[-1])
+        if not further_paths:
+            return [[], 10e9].copy()
+        return further_paths[0].copy()
+
+    def findPath(self, start: Node, finish: Node) -> list:
+        temp = self.__find__(start, finish, [start].copy(), 0)
+
+        return temp
+
+
 def get_font(size):
     return pygame.font.SysFont('arial', size)
 
@@ -257,6 +287,7 @@ def play():
         global shift
         global alt
         global scale
+        global path
         events = pygame.event.get()
         pygame_widgets.update(events)
         for event in events:
@@ -342,6 +373,13 @@ def play():
                 is_grabing = False
             if event.type == KEYDOWN and event.key == pygame.K_q:
                 paused = not paused
+            if event.type == KEYDOWN and event.key == pygame.K_e:
+                print("LOG")
+                temp = Graph(Objects)
+                path.clear()
+                path, dist = temp.findPath(Objects[0], Objects[-1])
+                print(dist)
+
             if event.type == KEYDOWN and event.key == pygame.K_c:
                 for obj in Objects:
                     obj.destinations.clear()
@@ -429,7 +467,7 @@ def options():
         screen.blit(OPTIONS_TEXT, OPTIONS_RECT)
 
         BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
-                                 hovering_color='Green')
+                             hovering_color='Green')
         TURN_ON_BUTTON = Button(image=None, pos=(400, 350), text_input='ВКЛЮЧИТЬ МУЗЫКУ', font=get_font(75),
                                 base_color='White', hovering_color='Green')
         TURN_OFF_BUTTON = Button(image=None, pos=(400, 350), text_input='ВЫКЛЮЧИТЬ МУЗЫКУ', font=get_font(75),
