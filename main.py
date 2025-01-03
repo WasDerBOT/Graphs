@@ -126,14 +126,19 @@ class Node:
         return str(self.position)
 
     def draw(self, surface, node_color, radius):
+
+
         radius /= scale
         position = (self.position - camera_center) / scale + camera_center
         pygame.draw.circle(surface, node_color, position.get_tuple(), radius)
         pygame.draw.circle(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
                            position.get_tuple(), int(radius), int(radius * 0.3))
         for dest in self.destinations:
-
-            draw_connection(surface, node_color, self, dest)
+            if self in right_path:
+                if dest in right_path:
+                    draw_connection(surface, node_color, self, dest)
+            else:
+                draw_connection(surface, node_color, self, dest)
             if dest is path_start or dest is path_finish:
                 dest.draw(surface, node_color, radius)
 
