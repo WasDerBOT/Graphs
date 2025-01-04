@@ -1,5 +1,6 @@
 import pygame
 import pygame_widgets
+import sqlite3
 from pygame.locals import *
 from random import randint
 from pygame_widgets.textbox import TextBox
@@ -465,7 +466,52 @@ def options():
 
 
 def table():
-    pass
+    connection = sqlite3.connect('my_database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'SELECT * FROM Users')
+    users = cursor.fetchall()
+    best_player = []
+    if len(users) > 5:
+        for i in range(5):
+            USER_NAME_TEXT = get_font(50).render(f'{i + 1}.{users[i][1]}', True, 'White')
+            USER_NAME_RECT = USER_NAME_TEXT.get_rect(center=(250, 150 + 50 * (i + 1)))
+            USER_SCORE_TEXT = get_font(50).render(f'{users[i][2]}', True, 'White')
+            USER_SCORE_RECT = USER_NAME_TEXT.get_rect(center=(600, 150 + 50 * (i + 1)))
+            best_player.append([USER_NAME_TEXT, USER_NAME_RECT, USER_SCORE_TEXT, USER_SCORE_RECT])
+    else:
+        for i in range(len(users)):
+            USER_NAME_TEXT = get_font(50).render(f'{i + 1}.{users[i][1]}', True, 'White')
+            USER_NAME_RECT = USER_NAME_TEXT.get_rect(center=(250, 150 + 70 * (i + 1)))
+            USER_SCORE_TEXT = get_font(50).render(f'{users[i][2]}', True, 'White')
+            USER_SCORE_RECT = USER_NAME_TEXT.get_rect(center=(600, 150 + 70 * (i + 1)))
+            best_player.append([USER_NAME_TEXT, USER_NAME_RECT, USER_SCORE_TEXT, USER_SCORE_RECT])
+    while True:
+        pygame.display.set_caption('Таблица лидеров')
+        screen.fill((0, 0, 0))
+        TABLE_TEXT = get_font(100).render('Лучшие игроки', True, 'White')
+        TABLE_RECT = TABLE_TEXT.get_rect(center=(400, 50))
+        screen.blit(TABLE_TEXT, TABLE_RECT)
+        USER_TEXT = get_font(75).render('Имя:', True, 'White')
+        USER_RECT = USER_TEXT.get_rect(center=(250, 150))
+        screen.blit(USER_TEXT, USER_RECT)
+        SCORE_TEXT = get_font(75).render('Счёт:', True, 'White')
+        SCORE_RECT = SCORE_TEXT.get_rect(center=(600, 150))
+        screen.blit(SCORE_TEXT, SCORE_RECT)
+        BACK_BUTTON = Button(image=None, pos=(400, 550), text_input='НАЗАД', font=get_font(75), base_color='White',
+                             hovering_color='Green')
+        BACK_BUTTON.changeColor(pygame.mouse.get_pos())
+        BACK_BUTTON.update(screen)
+        for i in range(len(best_player)):
+            screen.blit(best_player[i][0], best_player[i][1])
+            screen.blit(best_player[i][2], best_player[i][3])
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    menu()
+        pygame.display.update()
 
 
 menu()
