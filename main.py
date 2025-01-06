@@ -11,9 +11,13 @@ from button import Button
 pygame.init()
 size = width, height = 800, 600
 screen = pygame.display.set_mode(size)
-pygame.mixer.music.load('Tetris.mp3')
-pygame.mixer.music.set_volume(0.5)
-pygame.mixer.music.play(-1)
+pygame.mixer.music.load('valve.mp3')
+pygame.mixer.music.play()
+intro_timer = 0
+intro_v = -100
+intro_clock = pygame.time.Clock()
+intro_flag = False
+intro_text = 0
 FPS = 60
 screen_width = 800
 screen_height = 600
@@ -207,6 +211,37 @@ scale = 1
 
 def get_font(size):
     return pygame.font.SysFont('arial', size)
+
+
+def intro():
+    global intro_timer, intro_v, intro_flag, intro_text
+    while True:
+        pygame.display.set_caption('Меню')
+        screen.fill((0, 0, 0))
+        if intro_timer < 5:
+            KOLHOZ_TEXT = get_font(125).render('KOLHOZ', True, 'White')
+            KOLHOZ_RECT = KOLHOZ_TEXT.get_rect(center=(intro_v, 200))
+        elif intro_timer < 11:
+            SOWTFARE_TEXT = get_font(125).render('SOFTWARE', True, 'Orange')
+            SOWTFARE_RECT = SOWTFARE_TEXT.get_rect(center=(425, 400))
+            SOWTFARE_TEXT.set_alpha(intro_text)
+            intro_flag = True
+        screen.blit(KOLHOZ_TEXT, KOLHOZ_RECT)
+        if intro_flag:
+            intro_text += 0.18
+            screen.blit(SOWTFARE_TEXT, SOWTFARE_RECT)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if intro_timer >= 9.5 or (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE):
+                pygame.mixer.music.load('Tetris.mp3')
+                pygame.mixer.music.set_volume(0.5)
+                pygame.mixer.music.play(-1)
+                menu()
+        pygame.display.update()
+        intro_timer += intro_clock.tick() / 1000
+        intro_v = - 100 + 100 * intro_timer
 
 
 def menu():
@@ -514,4 +549,4 @@ def table():
         pygame.display.update()
 
 
-menu()
+intro()
