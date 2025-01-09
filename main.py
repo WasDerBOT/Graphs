@@ -1,11 +1,11 @@
+import sys
+from random import randint
+import sqlite3
 import pygame
 import pygame_widgets
-import sqlite3
 from pygame.locals import *
-from random import randint
 from pygame_widgets.textbox import TextBox
 from pygame_widgets.slider import Slider
-import sys
 from button import Button
 
 pygame.init()
@@ -32,6 +32,8 @@ NODE_SUCCESSFUL_PATH = (0, 153, 76)
 NODE_WRONG_PATH = (194, 36, 25)
 NODE_COLOR = (125, 125, 125)
 NODE_PATH_COLOR = (13, 212, 212)
+NODE_FINISH_COLOR = (245, 236, 66)
+NODE_START_COLOR = (164, 245, 66)
 
 FONT = pygame.font.Font('Cinematic.otf', size=32)
 
@@ -41,8 +43,11 @@ inputed = False
 music_check = True
 check_slider = True
 
+
 def set_dist():
-    global current_dist, inputed, is_inputting
+    global current_dist
+    global inputed
+    global is_inputting
     is_inputting = False
     inputed = True
 
@@ -51,7 +56,6 @@ def set_dist():
         textbox.setText("")
     except ValueError:
         print("Type number!")
-
 
 
 textbox = TextBox(display_surface, 255, 100, 300, 100, fontSize=40,
@@ -129,20 +133,41 @@ class Node:
         return str(self.position)
 
     def draw(self, surface, node_color, radius):
+
+
         radius /= scale
         position = (self.position - camera_center) / scale + camera_center
         pygame.draw.circle(surface, node_color, position.get_tuple(), radius)
         pygame.draw.circle(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
                            position.get_tuple(), int(radius), int(radius * 0.3))
         for dest in self.destinations:
-            draw_connection(surface, node_color, self, dest)
+            if self in right_path:
+                if dest in right_path:
+                    draw_connection(surface, node_color, self, dest)
+            else:
+                draw_connection(surface, node_color, self, dest)
+            if self is not path_start and self is not path_finish and (dest is path_start or dest is path_finish):
+                dest.draw(surface, node_color, radius)
+
+        if self is path_start:
+            FONT = pygame.font.Font('Cinematic.otf', size=int(50 / scale))
+            text_surface = FONT.render(str("S"), True, (255, 255, 255))
+            display_surface.blit(text_surface,
+                                 ((self.position + Vector(-node_radius * 0.25,
+                                                          -node_radius * 0.75) - camera_center) / scale + camera_center).get_tuple())
+        if self is path_finish:
+            FONT = pygame.font.Font('Cinematic.otf', size=int(50 / scale))
+            text_surface = FONT.render(str("F"), True, (255, 255, 255))
+            display_surface.blit(text_surface,
+                                 ((self.position + Vector(-node_radius * 0.25,
+                                                          -node_radius * 0.75) - camera_center) / scale + camera_center).get_tuple())
 
     def interact_with(self, other):
         r = other.position - self.position
         direct = r.get_normalized()
         length = r.get_length() / (2 * node_radius)
         if other in self.destinations:
-            length /= min(max(1, self.distances[self.destinations.index(other)]), 30)**0.25
+            length /= min(max(1, self.distances[self.destinations.index(other)]), 30) ** 0.25
         force = Vector(0, 0)
         if other in self.destinations or self in other.destinations:
             force = direct * length ** 3
@@ -193,6 +218,7 @@ is_inputting = False
 is_grabing = False
 is_displacing = False
 is_connecting = False
+right_mouse_button_mode = 0
 shift = False
 alt = False
 displacement_start = Vector(0, 0)
@@ -200,13 +226,44 @@ grabed = Node(Vector(-10e8, -10e8))
 paused = False
 connecting_from = None
 connecting_to = None
+path_start = None
+path_finish = None
 
 Objects = []
-path = []
+right_path = []
 camera_pos = Vector(0, 0)
 camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
 scale = 1
+
+
+class Graph:
+    def __init__(self, Nodes):
+        self.Nodes = Nodes
+        self.visited = []
+
+    def __find__(self, vertex: Node, finish: Node, current_path: list, current_path_dist: int):
+        further_paths = []
+        if vertex is finish:
+            return [current_path, current_path_dist].copy()
+        for dest in vertex.destinations:
+            if dest in current_path:
+                continue
+
+            temp = self.__find__(dest, finish, (current_path + [dest]).copy(),
+                                 current_path_dist + vertex.distances[vertex.destinations.index(dest)])
+            if finish in temp or True:
+                further_paths.append(temp)
+
+        further_paths = sorted(further_paths, key=lambda x: x[-1])
+        if not further_paths:
+            return [[], 10e9].copy()
+        return further_paths[0].copy()
+
+    def findPath(self, start: Node, finish: Node) -> list:
+        temp = self.__find__(start, finish, [start].copy(), 0)
+
+        return temp
 
 
 def get_font(size):
@@ -284,7 +341,20 @@ def play():
     running = True
 
     while running:
-        global is_displacing, is_inputting, inputed, paused, is_grabing, connecting_from, grabed, shift, alt, scale
+        global is_displacing
+        global is_inputting
+        global inputed
+        global paused
+        global is_grabing
+        global connecting_from
+        global grabed
+        global shift
+        global alt
+        global scale
+        global right_path
+        global path_start
+        global path_finish
+        global right_mouse_button_mode
         events = pygame.event.get()
         pygame_widgets.update(events)
         for event in events:
@@ -303,10 +373,10 @@ def play():
                                     o.distances.pop(o.destinations.index(obj))
                                     o.destinations.remove(obj)
                         elif alt:
-                            if obj in path:
-                                path.remove(obj)
+                            if obj in right_path:
+                                right_path.remove(obj)
                             else:
-                                path.append(obj)
+                                right_path.append(obj)
                         else:
                             is_grabing = True
                             grabed = obj
@@ -333,8 +403,8 @@ def play():
                                 o.distances.pop(o.destinations.index(obj))
                                 o.destinations.remove(obj)
                         Objects.remove(obj)
-                        if obj in path:
-                            path.remove(obj)
+                        if obj in right_path:
+                            right_path.remove(obj)
                         break
                 else:
                     continue  # this functional currently turned off
@@ -347,7 +417,14 @@ def play():
                 mouse_pos = get_mouse_pos()
                 for obj in Objects:
                     if (mouse_pos - obj.position).get_length() < node_radius:
-                        connecting_from = obj
+                        right_path.clear()
+                        if right_mouse_button_mode == 0:
+                            connecting_from = obj
+                        elif right_mouse_button_mode == 1:
+                            path_start = obj
+                        elif right_mouse_button_mode == 2:
+                            path_finish = obj
+
                         break
                 else:
                     Objects.append(Node(mouse_pos))
@@ -370,11 +447,31 @@ def play():
                 is_grabing = False
             if event.type == KEYDOWN and event.key == pygame.K_q:
                 paused = not paused
+            if event.type == KEYDOWN and event.key == pygame.K_SPACE:
+                right_mouse_button_mode += 1
+                right_mouse_button_mode %= 3
+                if right_mouse_button_mode == 0:
+                    print("Connecting mode")
+                elif right_mouse_button_mode == 1:
+                    print("Start setting mode")
+                elif right_mouse_button_mode == 2:
+                    print("Finish setting mode")
+
+            if event.type == KEYDOWN and event.key == pygame.K_e:
+                temp = Graph(Objects)
+                right_path.clear()
+                if path_start not in Objects:
+                    path_start = None
+                if path_finish not in Objects:
+                    path_finish = None
+                if path_start is not None and path_finish is not None:
+                    right_path, dist = temp.findPath(path_start, path_finish)
+
             if event.type == KEYDOWN and event.key == pygame.K_c:
                 for obj in Objects:
                     obj.destinations.clear()
                     obj.distances.clear()
-                path.clear()
+                right_path.clear()
                 Objects.clear()
                 connecting_from = None
         # Processing
@@ -415,8 +512,8 @@ def play():
         display_surface.fill(BLACK)
         for obj in Objects:
             obj.draw(display_surface, NODE_COLOR, node_radius)
-        for obj in path:
-            obj.draw(display_surface, NODE_PATH_COLOR, node_radius)
+        for obj in right_path:
+            obj.draw(display_surface, NODE_SUCCESSFUL_PATH, node_radius)
 
         if is_inputting:
             textbox.draw()
@@ -462,7 +559,7 @@ def options():
         screen.blit(OPTIONS_TEXT, OPTIONS_RECT)
 
         BACK_BUTTON = Button(image=None, pos=(400, 550), text_input='НАЗАД', font=get_font(75), base_color='White',
-                                 hovering_color='Green')
+                             hovering_color='Green')
         TURN_ON_BUTTON = Button(image=None, pos=(400, 450), text_input='ВКЛЮЧИТЬ МУЗЫКУ', font=get_font(75),
                                 base_color='White', hovering_color='Green')
         TURN_OFF_BUTTON = Button(image=None, pos=(400, 450), text_input='ВЫКЛЮЧИТЬ МУЗЫКУ', font=get_font(75),
