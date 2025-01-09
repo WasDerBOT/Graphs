@@ -45,9 +45,7 @@ check_slider = True
 
 
 def set_dist():
-    global current_dist
-    global inputed
-    global is_inputting
+    global current_dist, inputed, is_inputting
     is_inputting = False
     inputed = True
 
@@ -341,20 +339,8 @@ def play():
     running = True
 
     while running:
-        global is_displacing
-        global is_inputting
-        global inputed
-        global paused
-        global is_grabing
-        global connecting_from
-        global grabed
-        global shift
-        global alt
-        global scale
-        global right_path
-        global path_start
-        global path_finish
-        global right_mouse_button_mode
+        global is_displacing, is_inputting, inputed, paused, is_grabing, connecting_from, grabed, shift, alt, scale
+        global right_path, path_start, path_finish, right_mouse_button_mode
         events = pygame.event.get()
         pygame_widgets.update(events)
         for event in events:
