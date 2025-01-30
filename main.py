@@ -244,8 +244,8 @@ def save(name="UNTITLED"):
             delimiter=";", quoting=csv.QUOTE_NONNUMERIC
         )
         for i in Objects:
-            a = Node()
-            writer.writerow(f"{a.position.x},{a.position};{','.join(a.distances)}")
+            a = Objects[i]
+            writer.writerow(f"{a.position.x},{a.position};{','.join([Objects.index(i) for i in a.destinations])};{','.join(a.distances)}")
 
 
 class Graph:
