@@ -6,6 +6,7 @@ import pygame_widgets
 from pygame.locals import *
 from pygame_widgets.textbox import TextBox
 from pygame_widgets.slider import Slider
+from pygame_widgets.dropdown import Dropdown
 from button import Button
 
 pygame.init()
@@ -234,6 +235,8 @@ camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
 scale = 1
 
+is_admin = False
+
 
 class Graph:
     def __init__(self, Nodes):
@@ -323,7 +326,7 @@ def menu():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if PLAY_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    play()
+                    create()
                 if OPTIONS_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     options()
 
@@ -332,6 +335,108 @@ def menu():
                 if QUIT_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     pygame.quit()
                     sys.exit()
+        pygame.display.update()
+
+
+def create():
+    global is_admin
+    lshift = False
+    rshift = False
+    lalt = False
+    ralt = False
+    rctrl = False
+    while True:
+        screen.fill((0, 0, 0))
+        GAME_BUTTON = Button(image=None, pos=(400, 125), text_input='КАМПАНИЯ', font=get_font(75), base_color='White',
+                             hovering_color='Green')
+        LEVELS_BUTTON = Button(image=None, pos=(400, 225), text_input='КАТАЛОГ УРОВНЕЙ', font=get_font(75),
+                                base_color='White', hovering_color='Green')
+        CREATE_LEVEL_BUTTON = Button(image=None, pos=(400, 325), text_input='СОЗДАНИЕ УРОВНЕЙ', font=get_font(75),
+                              base_color='White', hovering_color='Green')
+        BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
+                             hovering_color='Green')
+        buttons = [GAME_BUTTON, LEVELS_BUTTON, BACK_BUTTON]
+        if is_admin:
+            buttons.append(CREATE_LEVEL_BUTTON)
+        for button in buttons:
+            button.changeColor(pygame.mouse.get_pos())
+            button.update(screen)
+        for event in pygame.event.get():
+            if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LSHIFT:
+                lshift = True
+            if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_LSHIFT:
+                lshift = False
+
+            if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LALT:
+                lalt = True
+            if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_LALT:
+                lalt = False
+
+            if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_RSHIFT:
+                rshift = True
+            if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_RSHIFT:
+                rshift = False
+
+            if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_RALT:
+                ralt = True
+            if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_RALT:
+                ralt = False
+
+            if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_RCTRL:
+                rctrl = True
+            if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_RCTRL:
+                rctrl = False
+
+            if event.type == KEYDOWN and event.key == pygame.K_KP_PLUS and lalt and ralt and lshift and rshift and rctrl:
+                is_admin = not is_admin
+
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if GAME_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    pass
+                if LEVELS_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    choose_level()
+                if CREATE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    play()
+                if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    menu()
+        pygame.display.update()
+
+
+def choose_level():
+    pygame.display.set_caption('Выбор уровня')
+    running = True
+    dropdown = Dropdown(
+        screen, 420, 170, 280, 50, name='СПИСОК УРОВНЕЙ',
+        choices=[
+            'Red',
+            'Blue',
+            'Yellow',
+        ],
+        borderRadius=3, colour=pygame.Color('green'), values=[1, 2, 'true'], direction='down', textHAlign='left',
+        fontSize=40
+    )
+
+    BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
+                         hovering_color='Green')
+    LOAD_LEVEL_BUTTON = Button(image=None, pos=(200, 200), text_input='ЗАГРУЗИТЬ', font=get_font(55), base_color='White',
+                         hovering_color='Green')
+    while running:
+        screen.fill((0, 0, 0))
+        for button in [BACK_BUTTON, LOAD_LEVEL_BUTTON]:
+            button.changeColor(pygame.mouse.get_pos())
+            button.update(screen)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    create()
+        textbox.hide()
+        pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
 
