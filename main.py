@@ -62,6 +62,18 @@ textbox = TextBox(display_surface, 255, 100, 300, 100, fontSize=40,
                   radius=10, borderThickness=10, placeholderText="Введите длину", onSubmit=set_dist)
 
 
+dropdown = Dropdown(
+        screen, 420, 170, 280, 50, name='СПИСОК УРОВНЕЙ',
+        choices=[
+            'Red',
+            'Blue',
+            'Yellow',
+        ],
+        borderRadius=3, colour=pygame.Color('green'), values=[1, 2, 'true'], direction='down', textHAlign='left',
+        fontSize=40
+    )
+
+
 def get_mouse_pos():
     m_pos = pygame.mouse.get_pos()
     m_pos = Vector(m_pos[0], m_pos[1])
@@ -408,16 +420,7 @@ def create():
 def choose_level():
     pygame.display.set_caption('Выбор уровня')
     running = True
-    dropdown = Dropdown(
-        screen, 420, 170, 280, 50, name='СПИСОК УРОВНЕЙ',
-        choices=[
-            'Red',
-            'Blue',
-            'Yellow',
-        ],
-        borderRadius=3, colour=pygame.Color('green'), values=[1, 2, 'true'], direction='down', textHAlign='left',
-        fontSize=40
-    )
+    global dropdown
 
     BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
                          hovering_color='Green')
@@ -635,7 +638,7 @@ def play():
 
 
 def options():
-    global music_check, check_slider, output, slider
+    global music_check, check_slider, output, slider, dropdown
     if check_slider:
         slider = Slider(screen, 100, 150, 600, 40, min=0, max=100, step=1, colour=(255, 255, 255),
                         handleColour=(122, 122, 122))
@@ -684,6 +687,7 @@ def options():
         output.setText(f'Громкость музыки: {slider.getValue()}%')
         pygame.mixer.music.set_volume(slider.getValue() / 100)
         textbox.hide()
+        dropdown.hide()
         pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
