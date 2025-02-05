@@ -9,6 +9,7 @@ from pygame_widgets.slider import Slider
 from pygame_widgets.dropdown import Dropdown
 from button import Button
 import csv
+import os
 
 pygame.init()
 size = width, height = 800, 600
@@ -62,7 +63,6 @@ textbox = TextBox(display_surface, 255, 100, 300, 100, fontSize=40,
                   borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
                   radius=10, borderThickness=10, placeholderText="Введите длину", onSubmit=set_dist)
 
-
 dropdown = Dropdown(
         screen, 420, 170, 280, 50, name='СПИСОК УРОВНЕЙ',
         choices=[
@@ -74,6 +74,14 @@ dropdown = Dropdown(
         fontSize=40
     )
 
+slider = Slider(screen, 100, 150, 600, 40, min=0, max=100, step=1, colour=(255, 255, 255),
+                        handleColour=(122, 122, 122))
+
+output = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255), colour=(0, 0, 0))
+
+level_name = TextBox(display_surface, 50, 100, 350, 100, fontSize=40,
+                  borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
+                  radius=10, borderThickness=10, placeholderText="Название уровня", onSubmit=set_dist)
 
 def get_mouse_pos():
     m_pos = pygame.mouse.get_pos()
@@ -252,12 +260,12 @@ is_admin = False
 
 
 def save(name="UNTITLED"):
-    with open(f"levels/{name}.csv") as f:
+    with open(f"levels/{name}.csv", "w") as f:
         writer = csv.writer(
             f,
-            fieldnames=["id", "Position", "Destinations", "Distances"],
             delimiter=";", quoting=csv.QUOTE_NONNUMERIC
         )
+        # пофиксить
         for i in Objects:
             a = Objects[i]
             writer.writerow(f"{a.position.x},{a.position};{','.join([Objects.index(i) for i in a.destinations])};{','.join(a.distances)}")
@@ -433,7 +441,7 @@ def create():
 def choose_level():
     pygame.display.set_caption('Выбор уровня')
     running = True
-    global dropdown
+    global dropdown, slider, output
 
     BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
                          hovering_color='Green')
@@ -450,8 +458,13 @@ def choose_level():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    textbox.show()
+                    slider.show()
+                    output.show()
                     create()
         textbox.hide()
+        slider.hide()
+        output.hide()
         pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
@@ -478,7 +491,7 @@ def play():
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     create()
                 if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    pass
+                    save_menu()
             if event.type == MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = get_mouse_pos()
 
@@ -669,12 +682,36 @@ def play():
         pygame.display.update()
 
 
+def save_menu():
+    pygame.display.set_caption('Сохранение уровня')
+    running = True
+
+    BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
+                         hovering_color='Green')
+    SAVE_LEVEL_BUTTON = Button(image=None, pos=(580, 160), text_input='СОХРАНИТЬ', font=get_font(55),
+                               base_color='White',
+                               hovering_color='Green')
+    while running:
+        screen.fill((0, 0, 0))
+        for button in [BACK_BUTTON, SAVE_LEVEL_BUTTON]:
+            button.changeColor(pygame.mouse.get_pos())
+            button.update(screen)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    play()
+                if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    save()
+        level_name.draw()
+        pygame.display.update()
+
+
 def options():
     global music_check, check_slider, output, slider, dropdown
     if check_slider:
-        slider = Slider(screen, 100, 150, 600, 40, min=0, max=100, step=1, colour=(255, 255, 255),
-                        handleColour=(122, 122, 122))
-        output = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255), colour=(0, 0, 0))
         output.disable()
         check_slider = False
     while True:
