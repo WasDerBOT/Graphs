@@ -445,15 +445,27 @@ def choose_level():
 
 def play():
     running = True
-
+    esc = False
+    BACK_BUTTON = Button(image=None, pos=(150, 550), text_input='НАЗАД', font=get_font(75), base_color='White',
+                         hovering_color='Green')
+    SAVE_LEVEL_BUTTON = Button(image=None, pos=(550, 550), text_input='СОХРАНИТЬ', font=get_font(75), base_color='White',
+                         hovering_color='Green')
+    BACK_BUTTON.reverse()
+    SAVE_LEVEL_BUTTON.reverse()
     while running:
         global is_displacing, is_inputting, inputed, paused, is_grabing, connecting_from, grabed, shift, alt, scale
         global right_path, path_start, path_finish, right_mouse_button_mode
         events = pygame.event.get()
         pygame_widgets.update(events)
         for event in events:
-            if event.type == QUIT:
-                running = False
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    create()
+                if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    pass
             if event.type == MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = get_mouse_pos()
 
@@ -476,7 +488,10 @@ def play():
                             grabed = obj
 
                         break
-
+            if event.type == KEYDOWN and hasattr(event, 'mod') and event.key == pygame.K_ESCAPE:
+                esc = not esc
+                BACK_BUTTON.reverse()
+                SAVE_LEVEL_BUTTON.reverse()
             if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LSHIFT:
                 shift = True
             if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_LSHIFT:
@@ -632,6 +647,10 @@ def play():
                 connecting_to.distances.append(current_dist)
             connecting_to = None
             connecting_from = None
+        if esc:
+            for button in [BACK_BUTTON, SAVE_LEVEL_BUTTON]:
+                button.changeColor(pygame.mouse.get_pos())
+                button.update(screen)
 
         clock.tick(FPS)
         pygame.display.update()
@@ -676,6 +695,7 @@ def options():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     textbox.show()
+                    dropdown.show()
                     menu()
                 if TURN_OFF_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     music_check = False
