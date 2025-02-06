@@ -9,7 +9,6 @@ from pygame_widgets.slider import Slider
 from pygame_widgets.dropdown import Dropdown
 from button import Button
 import csv
-import os
 
 pygame.init()
 size = width, height = 800, 600
@@ -59,6 +58,11 @@ def set_dist():
         print("Type number!")
 
 
+def set_level_name():
+    name = level_name.getText()
+    level_name.setText("")
+
+
 textbox = TextBox(display_surface, 255, 100, 300, 100, fontSize=40,
                   borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
                   radius=10, borderThickness=10, placeholderText="Введите длину", onSubmit=set_dist)
@@ -79,9 +83,10 @@ slider = Slider(screen, 100, 150, 600, 40, min=0, max=100, step=1, colour=(255, 
 
 output = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255), colour=(0, 0, 0))
 
-level_name = TextBox(display_surface, 50, 100, 350, 100, fontSize=40,
+level_name = TextBox(screen, 50, 100, 350, 100, fontSize=40,
                   borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
-                  radius=10, borderThickness=10, placeholderText="Название уровня", onSubmit=set_dist)
+                  radius=10, borderThickness=10, placeholderText="Название уровня", onSubmit=set_level_name)
+
 
 def get_mouse_pos():
     m_pos = pygame.mouse.get_pos()
@@ -265,10 +270,9 @@ def save(name="UNTITLED"):
             f,
             delimiter=";", quoting=csv.QUOTE_NONNUMERIC
         )
-        # пофиксить
-        for i in Objects:
+        for i in range(len(Objects)):
             a = Objects[i]
-            writer.writerow(f"{a.position.x},{a.position};{','.join([Objects.index(i) for i in a.destinations])};{','.join(a.distances)}")
+            writer.writerow(f"{a.position.x},{a.position};{','.join([str(Objects.index(i)) for i in a.destinations])};{','.join(str(a.distances))}")
 
 
 class Graph:
@@ -442,7 +446,10 @@ def choose_level():
     pygame.display.set_caption('Выбор уровня')
     running = True
     global dropdown, slider, output
-
+    textbox.hide()
+    slider.hide()
+    output.hide()
+    level_name.hide()
     BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
                          hovering_color='Green')
     LOAD_LEVEL_BUTTON = Button(image=None, pos=(200, 200), text_input='ЗАГРУЗИТЬ', font=get_font(55), base_color='White',
@@ -461,10 +468,8 @@ def choose_level():
                     textbox.show()
                     slider.show()
                     output.show()
+                    level_name.show()
                     create()
-        textbox.hide()
-        slider.hide()
-        output.hide()
         pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
@@ -683,6 +688,10 @@ def play():
 
 
 def save_menu():
+    textbox.hide()
+    slider.hide()
+    output.hide()
+    dropdown.hide()
     pygame.display.set_caption('Сохранение уровня')
     running = True
 
@@ -702,10 +711,14 @@ def save_menu():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    textbox.show()
+                    slider.show()
+                    output.show()
+                    dropdown.show()
                     play()
                 if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    save()
-        level_name.draw()
+                    save(level_name.getText())
+        pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
 
@@ -714,6 +727,9 @@ def options():
     if check_slider:
         output.disable()
         check_slider = False
+    textbox.hide()
+    dropdown.hide()
+    level_name.hide()
     while True:
         pygame.display.set_caption('Настройки')
         screen.fill((0, 0, 0))
@@ -746,6 +762,7 @@ def options():
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     textbox.show()
                     dropdown.show()
+                    level_name.show()
                     menu()
                 if TURN_OFF_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     music_check = False
@@ -756,8 +773,6 @@ def options():
                     pygame.mixer.music.unpause()
         output.setText(f'Громкость музыки: {slider.getValue()}%')
         pygame.mixer.music.set_volume(slider.getValue() / 100)
-        textbox.hide()
-        dropdown.hide()
         pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
