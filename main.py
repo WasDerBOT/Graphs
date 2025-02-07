@@ -705,7 +705,9 @@ def save_menu():
         for button in [BACK_BUTTON, SAVE_LEVEL_BUTTON]:
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
-        for event in pygame.event.get():
+        events = pygame.event.get()
+        pygame_widgets.update(events)
+        for event in events:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
@@ -718,7 +720,7 @@ def save_menu():
                     play()
                 if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     save(level_name.getText())
-        pygame_widgets.update(pygame.event.get())
+
         pygame.display.update()
 
 
