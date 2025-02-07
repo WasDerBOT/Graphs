@@ -7,6 +7,7 @@ from pygame.locals import *
 from pygame_widgets.textbox import TextBox
 from pygame_widgets.slider import Slider
 from button import Button
+import csv
 
 pygame.init()
 size = width, height = 800, 600
@@ -213,14 +214,14 @@ def draw_connection(surface, node_color, a: Node, b: Node):
 
 
 is_inputting = False
-is_grabing = False
+is_grabbing = False
 is_displacing = False
 is_connecting = False
 right_mouse_button_mode = 0
 shift = False
 alt = False
 displacement_start = Vector(0, 0)
-grabed = Node(Vector(-10e8, -10e8))
+grabbed = Node(Vector(-10e8, -10e8))
 paused = False
 connecting_from = None
 connecting_to = None
@@ -233,6 +234,18 @@ camera_pos = Vector(0, 0)
 camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
 scale = 1
+
+
+def save(name="UNTITLED"):
+    with open(f"levels/{name}.csv") as f:
+        writer = csv.writer(
+            f,
+            fieldnames=["id", "Position", "Destinations", "Distances"],
+            delimiter=";", quoting=csv.QUOTE_NONNUMERIC
+        )
+        for i in Objects:
+            a = Objects[i]
+            writer.writerow(f"{a.position.x},{a.position};{','.join([Objects.index(i) for i in a.destinations])};{','.join(a.distances)}")
 
 
 class Graph:
@@ -339,7 +352,7 @@ def play():
     running = True
 
     while running:
-        global is_displacing, is_inputting, inputed, paused, is_grabing, connecting_from, grabed, shift, alt, scale
+        global is_displacing, is_inputting, inputed, paused, is_grabbing, connecting_from, grabbed, shift, alt, scale
         global right_path, path_start, path_finish, right_mouse_button_mode
         events = pygame.event.get()
         pygame_widgets.update(events)
@@ -364,8 +377,8 @@ def play():
                             else:
                                 right_path.append(obj)
                         else:
-                            is_grabing = True
-                            grabed = obj
+                            is_grabbing = True
+                            grabbed = obj
 
                         break
 
@@ -428,9 +441,9 @@ def play():
             if event.type == MOUSEWHEEL:
                 scale = max(min((scale * 10 - event.y) / 10, 10), 1)
 
-            if event.type == MOUSEBUTTONUP and grabed:
-                grabed = None
-                is_grabing = False
+            if event.type == MOUSEBUTTONUP and grabbed:
+                grabbed = None
+                is_grabbing = False
             if event.type == KEYDOWN and event.key == pygame.K_q:
                 paused = not paused
             if event.type == KEYDOWN and event.key == pygame.K_SPACE:
@@ -481,12 +494,12 @@ def play():
                 Objects.remove(obj)
             obj.process()
 
-        if is_grabing:
+        if is_grabbing:
             mouse_pos = get_mouse_pos()
 
-            grabed.velocity = mouse_pos - grabed.position
+            grabbed.velocity = mouse_pos - grabbed.position
             if paused:
-                grabed.position = mouse_pos
+                grabbed.position = mouse_pos
 
         if is_displacing:
             current = Vector(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
