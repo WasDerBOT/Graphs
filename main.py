@@ -263,7 +263,29 @@ def save(name="UNTITLED"):
         )
         for i in range(len(Objects)):
             a = Objects[i]
-            writer.writerow(f"{a.position.x},{a.position};{','.join([str(Objects.index(i)) for i in a.destinations])};{','.join(str(a.distances))}")
+            writer.writerow(f"{a.position.x},{a.position.y};{','.join([str(Objects.index(i)) for i in a.destinations])};{','.join(str(a.distances))}")
+
+
+def load(name="NOTPROVIDED"):
+    if name == "NOTPROVIDED":
+        raise ValueError
+    objects_local = [].copy()
+    destndist = []
+    with open(f"levels/{name}.csv", "w") as f:
+        reader = csv.reader(
+            f,
+            delimiter=";", quoting=csv.QUOTE_NONNUMERIC
+        )
+        for line in reader:
+            pos = [int(i) for i in line[0].split(",")]
+            pos = Vector(pos[0], pos[1])
+            objects_local.append(Node(pos))
+            destndist.append([[int(i) for i in line[1].split(",")].copy(), [int(i) for i in line[2].split(",")]])
+        for i in range(len(destndist)):
+            objects_local[i].destinations = [objects_local[k] for k in destndist[i][0]]
+            objects_local[i].distances = [objects_local[k] for k in destndist[i][1]]
+        return objects_local.copy()
+
 
 
 class Graph:
@@ -291,7 +313,6 @@ class Graph:
 
     def findPath(self, start: Node, finish: Node) -> list:
         temp = self.__find__(start, finish, [start].copy(), 0)
-
         return temp
 
 
