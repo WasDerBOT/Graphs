@@ -1,4 +1,5 @@
 import sys
+from os.path import isfile
 from random import randint
 import sqlite3
 import pygame
@@ -9,6 +10,7 @@ from pygame_widgets.slider import Slider
 from pygame_widgets.dropdown import Dropdown
 from button import Button
 import csv
+import os
 
 pygame.init()
 size = width, height = 800, 600
@@ -67,23 +69,12 @@ textbox = TextBox(display_surface, 255, 100, 300, 100, fontSize=40,
                   borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
                   radius=10, borderThickness=10, placeholderText="Введите длину", onSubmit=set_dist)
 
-dropdown = Dropdown(
-        screen, 420, 170, 280, 50, name='СПИСОК УРОВНЕЙ',
-        choices=[
-            'Red',
-            'Blue',
-            'Yellow',
-        ],
-        borderRadius=3, colour=pygame.Color('green'), values=[1, 2, 'true'], direction='down', textHAlign='left',
-        fontSize=40
-    )
-
 slider = Slider(screen, 100, 150, 600, 40, min=0, max=100, step=1, colour=(255, 255, 255),
                         handleColour=(122, 122, 122))
 
 output = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255), colour=(0, 0, 0))
 
-level_name = TextBox(screen, 50, 100, 350, 100, fontSize=40,
+level_name = TextBox(display_surface, 50, 100, 350, 100, fontSize=40,
                   borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
                   radius=10, borderThickness=10, placeholderText="Название уровня", onSubmit=set_level_name)
 
@@ -445,7 +436,15 @@ def create():
 def choose_level():
     pygame.display.set_caption('Выбор уровня')
     running = True
-    global dropdown, slider, output
+    onlyfiles = list(map(lambda x: x[:-4], os.listdir('levels')))
+    dropdown = Dropdown(
+        screen, 420, 170, 280, 50, name='СПИСОК УРОВНЕЙ',
+        choices=onlyfiles,
+        borderRadius=3, colour=pygame.Color('green'), direction='down', textHAlign='left',
+        fontSize=40
+    )
+    dropdown.show()
+    global slider, output
     textbox.hide()
     slider.hide()
     output.hide()
@@ -469,6 +468,7 @@ def choose_level():
                     slider.show()
                     output.show()
                     level_name.show()
+                    dropdown.hide()
                     create()
         pygame_widgets.update(pygame.event.get())
         pygame.display.update()
@@ -691,7 +691,6 @@ def save_menu():
     textbox.hide()
     slider.hide()
     output.hide()
-    dropdown.hide()
     pygame.display.set_caption('Сохранение уровня')
     running = True
 
@@ -716,21 +715,18 @@ def save_menu():
                     textbox.show()
                     slider.show()
                     output.show()
-                    dropdown.show()
                     play()
                 if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     save(level_name.getText())
-
         pygame.display.update()
 
 
 def options():
-    global music_check, check_slider, output, slider, dropdown
+    global music_check, check_slider, output, slider
     if check_slider:
         output.disable()
         check_slider = False
     textbox.hide()
-    dropdown.hide()
     level_name.hide()
     while True:
         pygame.display.set_caption('Настройки')
@@ -763,7 +759,6 @@ def options():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     textbox.show()
-                    dropdown.show()
                     level_name.show()
                     menu()
                 if TURN_OFF_BUTTON.checkForInput(pygame.mouse.get_pos()):
