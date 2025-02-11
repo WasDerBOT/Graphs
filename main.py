@@ -271,7 +271,7 @@ def load(name="NOTPROVIDED"):
         raise ValueError
     objects_local = [].copy()
     destndist = []
-    with open(f"levels/{name}.csv", "w") as f:
+    with open(f"levels/{name}.csv", "r") as f:
         reader = csv.reader(
             f,
             delimiter=";", quoting=csv.QUOTE_NONNUMERIC
@@ -491,6 +491,8 @@ def choose_level():
                     level_name.show()
                     dropdown.hide()
                     create()
+                if LOAD_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    load(dropdown.getSelected())
         pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
