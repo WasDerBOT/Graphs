@@ -1,3 +1,4 @@
+import random
 import sys
 from os.path import isfile
 from random import randint
@@ -323,6 +324,17 @@ class Graph:
 
 def get_font(size):
     return pygame.font.SysFont('arial', size)
+
+vertices = 10
+def random_node(Node, objects_local):
+    for i in range(random.randint(0, vertices // 2)):
+        pass
+def get_random_graph():
+    objects_local = [Node(Vector(0, 0))].copy()
+    while vertices:
+        random_node(random.randint(0, len(objects_local) - 1))
+        pass
+
 
 
 def intro():
