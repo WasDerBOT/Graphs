@@ -77,6 +77,7 @@ output = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255
 
 slider.hide()
 output.hide()
+textbox.hide()
 
 
 
@@ -488,7 +489,6 @@ def choose_level():
                     create()
                 if LOAD_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     dropdown.hide()
-                    print(dropdown.getSelected())
                     global Objects
                     Objects = load(dropdown.getSelected())
                     play()
@@ -497,7 +497,7 @@ def choose_level():
 
 
 def play():
-
+    textbox.show()
     running = True
     esc = False
     BACK_BUTTON = Button(image=None, pos=(150, 550), text_input='НАЗАД', font=get_font(75), base_color='White',
@@ -718,6 +718,8 @@ def play():
 
 
 def save_menu():
+    textbox.hide()
+    save_flag = False
     global level_name
     level_name = TextBox(display_surface, 50, 100, 350, 100, fontSize=40,
                          borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
@@ -733,6 +735,10 @@ def save_menu():
                                hovering_color='Green')
     while running:
         screen.fill((0, 0, 0))
+        if save_flag:
+            SAVE_TEXT = get_font(50).render('СОХРАНЕНО', True, 'Green')
+            SAVE_RECT = SAVE_TEXT.get_rect(center=(400, 250))
+            screen.blit(SAVE_TEXT, SAVE_RECT)
         for button in [BACK_BUTTON, SAVE_LEVEL_BUTTON]:
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
@@ -744,12 +750,11 @@ def save_menu():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    textbox.show()
                     level_name.hide()
                     play()
                 if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    level_name.hide()
                     save(level_name.getText())
+                    save_flag = True
         pygame.display.update()
 
 
