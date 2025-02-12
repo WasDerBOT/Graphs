@@ -522,6 +522,12 @@ def play():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    for obj in Objects:
+                        obj.destinations.clear()
+                        obj.distances.clear()
+                    right_path.clear()
+                    Objects.clear()
+                    connecting_from = None
                     textbox.hide()
                     create()
                 if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
