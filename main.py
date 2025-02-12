@@ -264,8 +264,8 @@ def save(name="UNTITLED"):
         )
         for i in range(len(Objects)):
             a = Objects[i]
-            writer.writerow(f"{a.position.x},{a.position.y};{','.join([str(Objects.index(i)) for i in a.destinations])};{','.join([str(k) for k in a.distances])}")
-
+            writer.writerow([str(a.position.x) + "," + str(a.position.y),','.join([str(Objects.index(i)) for i in a.destinations]),','.join([str(k) for k in a.distances])])
+            print([str(a.position.x) + "," + str(a.position.y),','.join([str(Objects.index(i)) for i in a.destinations]),','.join([str(k) for k in a.distances])])
 
 def load(name="NOTPROVIDED"):
     if name == "NOTPROVIDED":
@@ -277,14 +277,17 @@ def load(name="NOTPROVIDED"):
             f,
             delimiter=";", quoting=csv.QUOTE_NONNUMERIC
         )
-        for line in reader:
-            pos = [int(i) for i in line[0].split(",")]
+
+        for index, line in enumerate(reader):
+            pos = [float(i) for i in line[0].split(",")]
             pos = Vector(pos[0], pos[1])
+
             objects_local.append(Node(pos))
             destndist.append([[int(i) for i in line[1].split(",")].copy(), [int(i) for i in line[2].split(",")]])
+
         for i in range(len(destndist)):
             objects_local[i].destinations = [objects_local[k] for k in destndist[i][0]]
-            objects_local[i].distances = [objects_local[k] for k in destndist[i][1]]
+            objects_local[i].distances = [k for k in destndist[i][1]]
         return objects_local.copy()
 
 
@@ -486,15 +489,15 @@ def choose_level():
                 if LOAD_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     dropdown.hide()
                     print(dropdown.getSelected())
-                    play(load(dropdown.getSelected()))
+                    global Objects
+                    Objects = load(dropdown.getSelected())
+                    play()
         pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
 
-def play(objects=None):
-    if objects is None:
-        objects = []
-    Objects = objects.copy()
+def play():
+
     running = True
     esc = False
     BACK_BUTTON = Button(image=None, pos=(150, 550), text_input='НАЗАД', font=get_font(75), base_color='White',
