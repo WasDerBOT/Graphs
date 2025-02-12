@@ -263,7 +263,8 @@ def save(name="UNTITLED"):
         )
         for i in range(len(Objects)):
             a = Objects[i]
-            writer.writerow(f"{a.position.x},{a.position.y};{','.join([str(Objects.index(i)) for i in a.destinations])};{','.join(str(a.distances))}")
+            writer.writerow(f"{a.position.x},{a.position.y};{','.join([str(Objects.index(i)) for i in a.destinations])};{','.join([str(k) for k in a.distances])}")
+
 
 
 def load(name="NOTPROVIDED"):
