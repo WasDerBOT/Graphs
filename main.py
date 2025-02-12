@@ -1,5 +1,6 @@
 import random
 import sys
+from math import cos, sin
 from os.path import isfile
 from random import randint
 import sqlite3
@@ -71,15 +72,13 @@ textbox = TextBox(display_surface, 255, 100, 300, 100, fontSize=40,
                   radius=10, borderThickness=10, placeholderText="Введите длину", onSubmit=set_dist)
 
 slider = Slider(screen, 100, 150, 600, 40, min=0, max=100, step=1, colour=(255, 255, 255),
-                        handleColour=(122, 122, 122))
+                handleColour=(122, 122, 122))
 
 output = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255), colour=(0, 0, 0))
-
 
 slider.hide()
 output.hide()
 textbox.hide()
-
 
 
 def get_mouse_pos():
@@ -152,7 +151,6 @@ class Node:
         return str(self.position)
 
     def draw(self, surface, node_color, radius):
-
 
         radius /= scale
         position = (self.position - camera_center) / scale + camera_center
@@ -266,8 +264,13 @@ def save(name="UNTITLED"):
         )
         for i in range(len(Objects)):
             a = Objects[i]
-            writer.writerow([str(a.position.x) + "," + str(a.position.y),','.join([str(Objects.index(i)) for i in a.destinations]),','.join([str(k) for k in a.distances])])
-            print([str(a.position.x) + "," + str(a.position.y),','.join([str(Objects.index(i)) for i in a.destinations]),','.join([str(k) for k in a.distances])])
+            writer.writerow(
+                [str(a.position.x) + "," + str(a.position.y), ','.join([str(Objects.index(i)) for i in a.destinations]),
+                 ','.join([str(k) for k in a.distances])])
+            print(
+                [str(a.position.x) + "," + str(a.position.y), ','.join([str(Objects.index(i)) for i in a.destinations]),
+                 ','.join([str(k) for k in a.distances])])
+
 
 def load(name="NOTPROVIDED"):
     if name == "NOTPROVIDED":
@@ -291,7 +294,6 @@ def load(name="NOTPROVIDED"):
             objects_local[i].destinations = [objects_local[k] for k in destndist[i][0]]
             objects_local[i].distances = [k for k in destndist[i][1]]
         return objects_local.copy()
-
 
 
 class Graph:
@@ -325,16 +327,27 @@ class Graph:
 def get_font(size):
     return pygame.font.SysFont('arial', size)
 
-vertices = 10
-def random_node(Node, objects_local):
-    for i in range(random.randint(0, vertices // 2)):
-        pass
-def get_random_graph():
-    objects_local = [Node(Vector(0, 0))].copy()
-    while vertices:
-        random_node(random.randint(0, len(objects_local) - 1))
-        pass
 
+def random_node(node, objects_local):
+    if randint(0, 100) > 80 or len(node.destinations) == 1:
+        a = randint(0, 100) / 100
+        pos = Vector(Node.position.x + cos(a), Node.position.y + sin(a))
+        dist = randint(0, 50)
+        temp = Node(pos, [node].copy(), [dist].copy())
+        node.destinations.append(temp)
+        node.distances.append(dist)
+        objects_local.append(temp)
+    else:
+        next = randint(0, len(node.destinations) - 1)
+        random_node(node.destinations[next], objects_local)
+
+
+def get_random_graph(vertices):
+    objects_local = [Node(Vector(0, 0))].copy()
+    for i in range(vertices):
+        random_node(objects_local[0], objects_local)
+
+    return objects_local
 
 
 def intro():
@@ -416,9 +429,9 @@ def create():
         GAME_BUTTON = Button(image=None, pos=(400, 125), text_input='КАМПАНИЯ', font=get_font(75), base_color='White',
                              hovering_color='Green')
         LEVELS_BUTTON = Button(image=None, pos=(400, 225), text_input='КАТАЛОГ УРОВНЕЙ', font=get_font(75),
-                                base_color='White', hovering_color='Green')
+                               base_color='White', hovering_color='Green')
         CREATE_LEVEL_BUTTON = Button(image=None, pos=(400, 325), text_input='СОЗДАНИЕ УРОВНЕЙ', font=get_font(75),
-                              base_color='White', hovering_color='Green')
+                                     base_color='White', hovering_color='Green')
         BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
                              hovering_color='Green')
         buttons = [GAME_BUTTON, LEVELS_BUTTON, BACK_BUTTON]
@@ -484,8 +497,9 @@ def choose_level():
     dropdown.show()
     BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
                          hovering_color='Green')
-    LOAD_LEVEL_BUTTON = Button(image=None, pos=(200, 200), text_input='ЗАГРУЗИТЬ', font=get_font(55), base_color='White',
-                         hovering_color='Green')
+    LOAD_LEVEL_BUTTON = Button(image=None, pos=(200, 200), text_input='ЗАГРУЗИТЬ', font=get_font(55),
+                               base_color='White',
+                               hovering_color='Green')
     while running:
         screen.fill((0, 0, 0))
         for button in [BACK_BUTTON, LOAD_LEVEL_BUTTON]:
@@ -514,8 +528,9 @@ def play():
     esc = False
     BACK_BUTTON = Button(image=None, pos=(150, 550), text_input='НАЗАД', font=get_font(75), base_color='White',
                          hovering_color='Green')
-    SAVE_LEVEL_BUTTON = Button(image=None, pos=(550, 550), text_input='СОХРАНИТЬ', font=get_font(75), base_color='White',
-                         hovering_color='Green')
+    SAVE_LEVEL_BUTTON = Button(image=None, pos=(550, 550), text_input='СОХРАНИТЬ', font=get_font(75),
+                               base_color='White',
+                               hovering_color='Green')
     BACK_BUTTON.reverse()
     SAVE_LEVEL_BUTTON.reverse()
 
