@@ -329,9 +329,9 @@ def get_font(size):
 
 
 def random_node(node, objects_local):
-    if randint(0, 100) > 80 or len(node.destinations) == 1:
+    if randint(0, 100) > 80 or len(node.destinations) <= 1:
         a = randint(0, 100) / 100
-        pos = Vector(Node.position.x + cos(a), Node.position.y + sin(a))
+        pos = Vector(node.position.x + cos(a), node.position.y + sin(a))
         dist = randint(0, 50)
         temp = Node(pos, [node].copy(), [dist].copy())
         node.destinations.append(temp)
@@ -597,7 +597,7 @@ def play():
                 right_path.clear()
                 Objects.clear()
                 connecting_from = None
-                Objects = get_random_graph(10)
+                Objects = get_random_graph(30)
 
             if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LSHIFT:
                 shift = True
