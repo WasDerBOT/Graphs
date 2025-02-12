@@ -266,13 +266,12 @@ def save(name="UNTITLED"):
             writer.writerow(f"{a.position.x},{a.position.y};{','.join([str(Objects.index(i)) for i in a.destinations])};{','.join([str(k) for k in a.distances])}")
 
 
-
 def load(name="NOTPROVIDED"):
     if name == "NOTPROVIDED":
         raise ValueError
     objects_local = [].copy()
     destndist = []
-    with open(f"levels/{name}.csv", "w") as f:
+    with open(f"levels/{name}.csv", "r") as f:
         reader = csv.reader(
             f,
             delimiter=";", quoting=csv.QUOTE_NONNUMERIC
@@ -492,11 +491,20 @@ def choose_level():
                     level_name.show()
                     dropdown.hide()
                     create()
+                if LOAD_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    textbox.show()
+                    slider.show()
+                    output.show()
+                    level_name.show()
+                    dropdown.hide()
+                    print(dropdown.getSelected())
+                    play(load(dropdown.getSelected()))
         pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
 
-def play():
+def play(objects):
+    Objects = objects.copy()
     running = True
     esc = False
     BACK_BUTTON = Button(image=None, pos=(150, 550), text_input='НАЗАД', font=get_font(75), base_color='White',
@@ -510,6 +518,10 @@ def play():
         global right_path, path_start, path_finish, right_mouse_button_mode
         events = pygame.event.get()
         pygame_widgets.update(events)
+        if esc:
+            for button in [BACK_BUTTON, SAVE_LEVEL_BUTTON]:
+                button.changeColor(pygame.mouse.get_pos())
+                button.update(screen)
         for event in events:
             if event.type == pygame.QUIT:
                 pygame.quit()
