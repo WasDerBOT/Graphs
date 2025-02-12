@@ -1,6 +1,5 @@
 import random
 import sys
-from math import cos, sin
 from os.path import isfile
 from random import randint
 import sqlite3
@@ -13,6 +12,7 @@ from pygame_widgets.dropdown import Dropdown
 from button import Button
 import csv
 import os
+from math import sin, cos
 
 pygame.init()
 size = width, height = 800, 600
@@ -523,26 +523,29 @@ def choose_level():
 
 
 def play():
+    global is_displacing, is_inputting, inputed, paused, is_grabbing, connecting_from, grabbed, shift, alt, scale
+    global right_path, path_start, path_finish, right_mouse_button_mode, is_admin, Objects
     textbox.show()
     running = True
     esc = False
     BACK_BUTTON = Button(image=None, pos=(150, 550), text_input='НАЗАД', font=get_font(75), base_color='White',
                          hovering_color='Green')
-    SAVE_LEVEL_BUTTON = Button(image=None, pos=(550, 550), text_input='СОХРАНИТЬ', font=get_font(75),
-                               base_color='White',
-                               hovering_color='Green')
+    if is_admin:
+        SAVE_LEVEL_BUTTON = Button(image=None, pos=(550, 550), text_input='СОХРАНИТЬ', font=get_font(75), base_color='White',
+                         hovering_color='Green')
+        SAVE_LEVEL_BUTTON.reverse()
     BACK_BUTTON.reverse()
-    SAVE_LEVEL_BUTTON.reverse()
-
+    if not Objects:
+        Objects = []
     while running:
-        global is_displacing, is_inputting, inputed, paused, is_grabbing, connecting_from, grabbed, shift, alt, scale
-        global right_path, path_start, path_finish, right_mouse_button_mode
         events = pygame.event.get()
         pygame_widgets.update(events)
         if esc:
-            for button in [BACK_BUTTON, SAVE_LEVEL_BUTTON]:
-                button.changeColor(pygame.mouse.get_pos())
-                button.update(screen)
+            BACK_BUTTON.changeColor(pygame.mouse.get_pos())
+            BACK_BUTTON.update(screen)
+            if is_admin:
+                SAVE_LEVEL_BUTTON.changeColor(pygame.mouse.get_pos())
+                SAVE_LEVEL_BUTTON.update(screen)
         for event in events:
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -557,7 +560,7 @@ def play():
                     connecting_from = None
                     textbox.hide()
                     create()
-                if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                if is_admin and SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     textbox.hide()
                     save_menu()
             if event.type == MOUSEBUTTONDOWN and event.button == 1:
@@ -585,7 +588,17 @@ def play():
             if event.type == KEYDOWN and hasattr(event, 'mod') and event.key == pygame.K_ESCAPE:
                 esc = not esc
                 BACK_BUTTON.reverse()
-                SAVE_LEVEL_BUTTON.reverse()
+                if is_admin:
+                    SAVE_LEVEL_BUTTON.reverse()
+            if event.type == KEYDOWN and hasattr(event, 'mod') and event.key == pygame.K_g:
+                for obj in Objects:
+                    obj.destinations.clear()
+                    obj.distances.clear()
+                right_path.clear()
+                Objects.clear()
+                connecting_from = None
+                Objects = get_random_graph(10)
+
             if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LSHIFT:
                 shift = True
             if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_LSHIFT:
@@ -742,9 +755,11 @@ def play():
             connecting_to = None
             connecting_from = None
         if esc:
-            for button in [BACK_BUTTON, SAVE_LEVEL_BUTTON]:
-                button.changeColor(pygame.mouse.get_pos())
-                button.update(screen)
+            BACK_BUTTON.changeColor(pygame.mouse.get_pos())
+            BACK_BUTTON.update(screen)
+            if is_admin:
+                SAVE_LEVEL_BUTTON.changeColor(pygame.mouse.get_pos())
+                SAVE_LEVEL_BUTTON.update(screen)
 
         clock.tick(FPS)
         pygame.display.update()
