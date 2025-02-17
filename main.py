@@ -1,3 +1,4 @@
+import random
 import sys
 from os.path import isfile
 from random import randint
@@ -11,6 +12,7 @@ from pygame_widgets.dropdown import Dropdown
 from button import Button
 import csv
 import os
+from math import sin, cos
 
 pygame.init()
 size = width, height = 800, 600
@@ -70,13 +72,13 @@ textbox = TextBox(display_surface, 255, 100, 300, 100, fontSize=40,
                   radius=10, borderThickness=10, placeholderText="Введите длину", onSubmit=set_dist)
 
 slider = Slider(screen, 100, 150, 600, 40, min=0, max=100, step=1, colour=(255, 255, 255),
-                        handleColour=(122, 122, 122))
+                handleColour=(122, 122, 122))
 
 output = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255), colour=(0, 0, 0))
 
-level_name = TextBox(display_surface, 50, 100, 350, 100, fontSize=40,
-                  borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
-                  radius=10, borderThickness=10, placeholderText="Название уровня", onSubmit=set_level_name)
+slider.hide()
+output.hide()
+textbox.hide()
 
 
 def get_mouse_pos():
@@ -149,7 +151,6 @@ class Node:
         return str(self.position)
 
     def draw(self, surface, node_color, radius):
-
 
         radius /= scale
         position = (self.position - camera_center) / scale + camera_center
@@ -263,7 +264,12 @@ def save(name="UNTITLED"):
         )
         for i in range(len(Objects)):
             a = Objects[i]
-            writer.writerow(f"{a.position.x},{a.position.y};{','.join([str(Objects.index(i)) for i in a.destinations])};{','.join(str(a.distances))}")
+            writer.writerow(
+                [str(a.position.x) + "," + str(a.position.y), ','.join([str(Objects.index(i)) for i in a.destinations]),
+                 ','.join([str(k) for k in a.distances])])
+            print(
+                [str(a.position.x) + "," + str(a.position.y), ','.join([str(Objects.index(i)) for i in a.destinations]),
+                 ','.join([str(k) for k in a.distances])])
 
 
 def load(name="NOTPROVIDED"):
@@ -276,16 +282,18 @@ def load(name="NOTPROVIDED"):
             f,
             delimiter=";", quoting=csv.QUOTE_NONNUMERIC
         )
-        for line in reader:
-            pos = [int(i) for i in line[0].split(",")]
+
+        for index, line in enumerate(reader):
+            pos = [float(i) for i in line[0].split(",")]
             pos = Vector(pos[0], pos[1])
+
             objects_local.append(Node(pos))
             destndist.append([[int(i) for i in line[1].split(",")].copy(), [int(i) for i in line[2].split(",")]])
+
         for i in range(len(destndist)):
             objects_local[i].destinations = [objects_local[k] for k in destndist[i][0]]
-            objects_local[i].distances = [objects_local[k] for k in destndist[i][1]]
+            objects_local[i].distances = [k for k in destndist[i][1]]
         return objects_local.copy()
-
 
 
 class Graph:
@@ -318,6 +326,28 @@ class Graph:
 
 def get_font(size):
     return pygame.font.SysFont('arial', size)
+
+
+def random_node(node, objects_local):
+    if randint(0, 100) > 80 or len(node.destinations) <= 1:
+        a = randint(0, 100) / 100
+        pos = Vector(node.position.x + cos(a), node.position.y + sin(a))
+        dist = randint(0, 50)
+        temp = Node(pos, [node].copy(), [dist].copy())
+        node.destinations.append(temp)
+        node.distances.append(dist)
+        objects_local.append(temp)
+    else:
+        next = randint(0, len(node.destinations) - 1)
+        random_node(node.destinations[next], objects_local)
+
+
+def get_random_graph(vertices):
+    objects_local = [Node(Vector(0, 0))].copy()
+    for i in range(vertices):
+        random_node(objects_local[0], objects_local)
+
+    return objects_local
 
 
 def intro():
@@ -399,9 +429,9 @@ def create():
         GAME_BUTTON = Button(image=None, pos=(400, 125), text_input='КАМПАНИЯ', font=get_font(75), base_color='White',
                              hovering_color='Green')
         LEVELS_BUTTON = Button(image=None, pos=(400, 225), text_input='КАТАЛОГ УРОВНЕЙ', font=get_font(75),
-                                base_color='White', hovering_color='Green')
+                               base_color='White', hovering_color='Green')
         CREATE_LEVEL_BUTTON = Button(image=None, pos=(400, 325), text_input='СОЗДАНИЕ УРОВНЕЙ', font=get_font(75),
-                              base_color='White', hovering_color='Green')
+                                     base_color='White', hovering_color='Green')
         BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
                              hovering_color='Green')
         buttons = [GAME_BUTTON, LEVELS_BUTTON, BACK_BUTTON]
@@ -465,15 +495,11 @@ def choose_level():
         fontSize=40
     )
     dropdown.show()
-    global slider, output
-    textbox.hide()
-    slider.hide()
-    output.hide()
-    level_name.hide()
     BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
                          hovering_color='Green')
-    LOAD_LEVEL_BUTTON = Button(image=None, pos=(200, 200), text_input='ЗАГРУЗИТЬ', font=get_font(55), base_color='White',
-                         hovering_color='Green')
+    LOAD_LEVEL_BUTTON = Button(image=None, pos=(200, 200), text_input='ЗАГРУЗИТЬ', font=get_font(55),
+                               base_color='White',
+                               hovering_color='Green')
     while running:
         screen.fill((0, 0, 0))
         for button in [BACK_BUTTON, LOAD_LEVEL_BUTTON]:
@@ -485,40 +511,57 @@ def choose_level():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    textbox.show()
-                    slider.show()
-                    output.show()
-                    level_name.show()
                     dropdown.hide()
                     create()
                 if LOAD_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    load(dropdown.getSelected())
+                    dropdown.hide()
+                    global Objects
+                    Objects = load(dropdown.getSelected())
+                    play()
         pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
 
 def play():
+    global is_displacing, is_inputting, inputed, paused, is_grabbing, connecting_from, grabbed, shift, alt, scale
+    global right_path, path_start, path_finish, right_mouse_button_mode, is_admin, Objects
+    textbox.show()
     running = True
     esc = False
     BACK_BUTTON = Button(image=None, pos=(150, 550), text_input='НАЗАД', font=get_font(75), base_color='White',
                          hovering_color='Green')
-    SAVE_LEVEL_BUTTON = Button(image=None, pos=(550, 550), text_input='СОХРАНИТЬ', font=get_font(75), base_color='White',
+    if is_admin:
+        SAVE_LEVEL_BUTTON = Button(image=None, pos=(550, 550), text_input='СОХРАНИТЬ', font=get_font(75), base_color='White',
                          hovering_color='Green')
+        SAVE_LEVEL_BUTTON.reverse()
     BACK_BUTTON.reverse()
-    SAVE_LEVEL_BUTTON.reverse()
+    if not Objects:
+        Objects = []
     while running:
-        global is_displacing, is_inputting, inputed, paused, is_grabbing, connecting_from, grabbed, shift, alt, scale
-        global right_path, path_start, path_finish, right_mouse_button_mode
         events = pygame.event.get()
         pygame_widgets.update(events)
+        if esc:
+            BACK_BUTTON.changeColor(pygame.mouse.get_pos())
+            BACK_BUTTON.update(screen)
+            if is_admin:
+                SAVE_LEVEL_BUTTON.changeColor(pygame.mouse.get_pos())
+                SAVE_LEVEL_BUTTON.update(screen)
         for event in events:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    for obj in Objects:
+                        obj.destinations.clear()
+                        obj.distances.clear()
+                    right_path.clear()
+                    Objects.clear()
+                    connecting_from = None
+                    textbox.hide()
                     create()
-                if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                if is_admin and SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    textbox.hide()
                     save_menu()
             if event.type == MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = get_mouse_pos()
@@ -545,7 +588,17 @@ def play():
             if event.type == KEYDOWN and hasattr(event, 'mod') and event.key == pygame.K_ESCAPE:
                 esc = not esc
                 BACK_BUTTON.reverse()
-                SAVE_LEVEL_BUTTON.reverse()
+                if is_admin:
+                    SAVE_LEVEL_BUTTON.reverse()
+            if event.type == KEYDOWN and hasattr(event, 'mod') and event.key == pygame.K_g:
+                for obj in Objects:
+                    obj.destinations.clear()
+                    obj.distances.clear()
+                right_path.clear()
+                Objects.clear()
+                connecting_from = None
+                Objects = get_random_graph(30)
+
             if event.type == KEYDOWN and hasattr(event, 'mod') and event.mod & pygame.KMOD_LSHIFT:
                 shift = True
             if event.type == KEYUP and hasattr(event, 'mod') and event.key == pygame.K_LSHIFT:
@@ -702,9 +755,11 @@ def play():
             connecting_to = None
             connecting_from = None
         if esc:
-            for button in [BACK_BUTTON, SAVE_LEVEL_BUTTON]:
-                button.changeColor(pygame.mouse.get_pos())
-                button.update(screen)
+            BACK_BUTTON.changeColor(pygame.mouse.get_pos())
+            BACK_BUTTON.update(screen)
+            if is_admin:
+                SAVE_LEVEL_BUTTON.changeColor(pygame.mouse.get_pos())
+                SAVE_LEVEL_BUTTON.update(screen)
 
         clock.tick(FPS)
         pygame.display.update()
@@ -712,8 +767,12 @@ def play():
 
 def save_menu():
     textbox.hide()
-    slider.hide()
-    output.hide()
+    save_flag = False
+    global level_name
+    level_name = TextBox(display_surface, 50, 100, 350, 100, fontSize=40,
+                         borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
+                         radius=10, borderThickness=10, placeholderText="Название уровня", onSubmit=set_level_name)
+
     pygame.display.set_caption('Сохранение уровня')
     running = True
 
@@ -724,6 +783,10 @@ def save_menu():
                                hovering_color='Green')
     while running:
         screen.fill((0, 0, 0))
+        if save_flag:
+            SAVE_TEXT = get_font(50).render('СОХРАНЕНО', True, 'Green')
+            SAVE_RECT = SAVE_TEXT.get_rect(center=(400, 250))
+            screen.blit(SAVE_TEXT, SAVE_RECT)
         for button in [BACK_BUTTON, SAVE_LEVEL_BUTTON]:
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
@@ -735,22 +798,21 @@ def save_menu():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    textbox.show()
-                    slider.show()
-                    output.show()
+                    level_name.hide()
                     play()
                 if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     save(level_name.getText())
+                    save_flag = True
         pygame.display.update()
 
 
 def options():
     global music_check, check_slider, output, slider
+    slider.show()
+    output.show()
     if check_slider:
         output.disable()
         check_slider = False
-    textbox.hide()
-    level_name.hide()
     while True:
         pygame.display.set_caption('Настройки')
         screen.fill((0, 0, 0))
@@ -781,8 +843,8 @@ def options():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    textbox.show()
-                    level_name.show()
+                    slider.hide()
+                    output.hide()
                     menu()
                 if TURN_OFF_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     music_check = False
