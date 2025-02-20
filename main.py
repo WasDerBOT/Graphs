@@ -253,7 +253,7 @@ camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
 scale = 1
 
-is_admin = False
+is_admin = True
 
 
 def save(name="UNTITLED"):
@@ -284,6 +284,9 @@ def load(name="NOTPROVIDED"):
         )
 
         for index, line in enumerate(reader):
+            if not line:
+                continue
+
             pos = [float(i) for i in line[0].split(",")]
             pos = Vector(pos[0], pos[1])
 
