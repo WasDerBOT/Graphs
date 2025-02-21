@@ -353,6 +353,12 @@ def get_random_graph(vertices):
     return objects_local
 
 
+def is_right_path(users_path, right_path):
+    if users_path == right_path:
+        return True
+    return False
+
+
 def intro():
     global intro_timer, intro_v, intro_flag, intro_text
     while True:
