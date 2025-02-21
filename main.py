@@ -29,9 +29,9 @@ screen_width = 800
 screen_height = 600
 display_surface = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Graphs")
-
+lives = 0
 clock = pygame.time.Clock()
-
+timer_clock = pygame.time.Clock()
 current_dist = 10
 BLACK = (0, 0, 0)
 NODE_SUCCESSFUL_PATH = (0, 153, 76)
@@ -44,7 +44,7 @@ NODE_START_COLOR = (164, 245, 66)
 FONT = pygame.font.Font('Cinematic.otf', size=32)
 
 node_radius = 30
-
+current_level = -1
 inputed = False
 music_check = True
 check_slider = True
@@ -245,14 +245,14 @@ connecting_from = None
 connecting_to = None
 path_start = None
 path_finish = None
-
+game_mod = False
 Objects = []
 right_path = []
 camera_pos = Vector(0, 0)
 camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
 scale = 1
-
+timer = 0
 is_admin = True
 
 
@@ -477,7 +477,7 @@ def create():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if GAME_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    pass
+                    start_campaign()
                 if LEVELS_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     choose_level()
                 if CREATE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
@@ -485,6 +485,16 @@ def create():
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     menu()
         pygame.display.update()
+
+
+def start_campaign(current_lives=3):
+    global lives, current_level
+    lives = current_lives
+    current_level += 1
+    levels_list = ['11.csv']  # сюда вставь названия уровней кампании
+    global Objects
+    Objects = load(levels_list[current_level][:-4])
+    play()
 
 
 def choose_level():
@@ -526,8 +536,8 @@ def choose_level():
 
 
 def play():
-    global is_displacing, is_inputting, inputed, paused, is_grabbing, connecting_from, grabbed, shift, alt, scale
-    global right_path, path_start, path_finish, right_mouse_button_mode, is_admin, Objects
+    global is_displacing, is_inputting, inputed, paused, is_grabbing, connecting_from, grabbed, shift, alt, scale, current_level
+    global right_path, path_start, path_finish, right_mouse_button_mode, is_admin, Objects, timer, timer_clock, lives, game_mod
     textbox.show()
     running = True
     esc = False
@@ -540,9 +550,12 @@ def play():
     BACK_BUTTON.reverse()
     if not Objects:
         Objects = []
+    if lives != 0:
+        game_mod = True
     while running:
         events = pygame.event.get()
         pygame_widgets.update(events)
+
         if esc:
             BACK_BUTTON.changeColor(pygame.mouse.get_pos())
             BACK_BUTTON.update(screen)
@@ -562,6 +575,10 @@ def play():
                     Objects.clear()
                     connecting_from = None
                     textbox.hide()
+                    lives = 0
+                    timer = 0
+                    game_mod = False
+                    current_level = -1
                     create()
                 if is_admin and SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     textbox.hide()
@@ -765,6 +782,14 @@ def play():
                 SAVE_LEVEL_BUTTON.update(screen)
 
         clock.tick(FPS)
+        if game_mod:
+            TIMER_TEXT = get_font(35).render(f'ВРЕМЯ:{round(timer) - 1}', True, 'White')
+            TIMER_RECT = TIMER_TEXT.get_rect(center=(100, 50))
+            LIVES_TEXT = get_font(35).render(f'ЖИЗНИ:{lives}', True, 'White')
+            LIVES_RECT = LIVES_TEXT.get_rect(center=(650, 50))
+            screen.blit(TIMER_TEXT, TIMER_RECT)
+            screen.blit(LIVES_TEXT, LIVES_RECT)
+            timer += timer_clock.tick() / 1000
         pygame.display.update()
 
 
