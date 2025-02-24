@@ -81,7 +81,9 @@ slider.hide()
 output.hide()
 textbox.hide()
 
-users_path = []
+
+users_path = [].copy()
+
 def get_mouse_pos():
     m_pos = pygame.mouse.get_pos()
     m_pos = Vector(m_pos[0], m_pos[1])
@@ -357,13 +359,31 @@ def get_random_graph(vertices):
     return objects_local
 
 
-def is_right_path(users_path, right_path):
+def is_right_path():
+    for obj in users_path:
+        print(Objects.index(obj))
+    print("-----")
+    for obj in right_path:
+        print(Objects.index(obj))
     if len(users_path) != len(right_path):
         return False
     for node in right_path:
         if node not in users_path:
-            return  False
+            return False
     return True
+
+
+def check_path():
+    global users_path, right_path, lives
+    if is_right_path():
+        print(is_right_path())
+        next_level()
+    else:
+        lives -= 1
+    if lives <= 0:
+        global current_level
+        current_level = -1
+        start_campaign()
 
 
 def intro():
@@ -500,13 +520,46 @@ def create():
         pygame.display.update()
 
 
+LEVELS = ['__LEVEL1__', '__LEVEL2__']  # сюда вставь названия уровней кампании
+
+
 def start_campaign(current_lives=3):
+
     global lives, current_level
+
     lives = current_lives
+
     current_level += 1
-    levels_list = ['__LEVEL1__']  # сюда вставь названия уровней кампании
+
     global Objects
-    Objects, start_index, finish_index = load(levels_list[current_level])
+    print(current_level)
+    Objects, start_index, finish_index = load(LEVELS[current_level])
+    global path_start, path_finish
+    path_start = Objects[int(start_index)]
+    path_finish = Objects[int(finish_index)]
+    play()
+
+
+def win():
+    pass
+
+
+def next_level():
+    global current_level, Objects, right_path
+    if current_level == len(LEVELS):
+        win()
+        return
+    current_level += 1
+    for obj in Objects:
+        obj.destinations.clear()
+        obj.distances.clear()
+    right_path.clear()
+
+    global connecting_from
+    connecting_from = None
+
+    Objects.clear()
+    Objects, start_index, finish_index = load(LEVELS[current_level])
     global path_start, path_finish
     path_start = Objects[int(start_index)]
     path_finish = Objects[int(finish_index)]
@@ -557,6 +610,7 @@ def choose_level():
 
 
 def play():
+    users_path.clear()
     global is_displacing, is_inputting, inputed, paused, is_grabbing, connecting_from, grabbed, shift, alt, scale, current_level
     global right_path, path_start, path_finish, right_mouse_button_mode, is_admin, Objects, timer, timer_clock, lives, game_mod
     textbox.show()
@@ -572,7 +626,7 @@ def play():
     BACK_BUTTON.reverse()
     if not Objects:
         Objects = []
-    users_path = [].copy()
+
 
     if lives != 0:
         game_mod = True
@@ -605,7 +659,15 @@ def play():
                     current_level = -1
                     create()
                 if game_mod and CHECK_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    pass
+                    temp = Graph(Objects)
+                    right_path.clear()
+                    if path_start not in Objects:
+                        path_start = None
+                    if path_finish not in Objects:
+                        path_finish = None
+                    if path_start is not None and path_finish is not None:
+                        right_path, dist = temp.findPath(path_start, path_finish)
+                    check_path()
 
                 if is_admin and SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     textbox.hide()
@@ -817,8 +879,9 @@ def play():
             screen.blit(TIMER_TEXT, TIMER_RECT)
             screen.blit(LIVES_TEXT, LIVES_RECT)
             timer += timer_clock.tick() / 1000
-            CHECK_BUTTON = Button(image=None, pos=(650, 480), text_input='ПРОВЕРИТЬ', font=get_font(45), base_color='White',
-                                 hovering_color='Green')
+            CHECK_BUTTON = Button(image=None, pos=(650, 480), text_input='ПРОВЕРИТЬ', font=get_font(45),
+                                  base_color='White',
+                                  hovering_color='Green')
             CHECK_BUTTON.changeColor(pygame.mouse.get_pos())
             CHECK_BUTTON.update(screen)
         pygame.display.update()
@@ -859,7 +922,8 @@ def save_menu():
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     level_name.hide()
                     play()
-                if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()) or (event.type == KEYDOWN and event.key == pygame.K_RETURN):
+                if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()) or (
+                        event.type == KEYDOWN and event.key == pygame.K_RETURN):
                     if not path_start or not path_finish:
                         print("Start or finish is not set !")
                         continue
