@@ -1,18 +1,18 @@
-import random
-import sys
-from os.path import isfile
-from random import randint
+import csv
+import os
 import sqlite3
+import sys
+from math import sin, cos
+from random import randint
+
 import pygame
 import pygame_widgets
 from pygame.locals import *
-from pygame_widgets.textbox import TextBox
-from pygame_widgets.slider import Slider
 from pygame_widgets.dropdown import Dropdown
+from pygame_widgets.slider import Slider
+from pygame_widgets.textbox import TextBox
+
 from button import Button
-import csv
-import os
-from math import sin, cos
 
 pygame.init()
 size = width, height = 800, 600
@@ -256,18 +256,17 @@ timer = 0
 is_admin = True
 
 
-def save(name="UNTITLED"):
+def save(start, finish, name="UNTITLED"):
     with open(f"levels/{name}.csv", "w") as f:
         writer = csv.writer(
             f,
             delimiter=";", quoting=csv.QUOTE_NONNUMERIC
         )
+        writer.writerow([Objects.index(start), Objects.index(finish)])
+
         for i in range(len(Objects)):
             a = Objects[i]
             writer.writerow(
-                [str(a.position.x) + "," + str(a.position.y), ','.join([str(Objects.index(i)) for i in a.destinations]),
-                 ','.join([str(k) for k in a.distances])])
-            print(
                 [str(a.position.x) + "," + str(a.position.y), ','.join([str(Objects.index(i)) for i in a.destinations]),
                  ','.join([str(k) for k in a.distances])])
 
@@ -284,6 +283,9 @@ def load(name="NOTPROVIDED"):
         )
 
         for index, line in enumerate(reader):
+            if index == 0:
+                start, finish = line
+                continue
             if not line:
                 continue
 
@@ -296,7 +298,7 @@ def load(name="NOTPROVIDED"):
         for i in range(len(destndist)):
             objects_local[i].destinations = [objects_local[k] for k in destndist[i][0]]
             objects_local[i].distances = [k for k in destndist[i][1]]
-        return objects_local.copy()
+        return objects_local.copy(), start, finish
 
 
 class Graph:
@@ -499,7 +501,10 @@ def start_campaign(current_lives=3):
     current_level += 1
     levels_list = ['1.csv']  # сюда вставь названия уровней кампании
     global Objects
-    Objects = load(levels_list[current_level][:-4])
+    Objects, start_index, finish_index = load(levels_list[current_level][:-4])
+    global path_start, path_finish
+    path_start = Objects[int(start_index)]
+    path_finish = Objects[int(finish_index)]
     play()
 
 
@@ -535,7 +540,12 @@ def choose_level():
                 if LOAD_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     dropdown.hide()
                     global Objects
-                    Objects = load(dropdown.getSelected())
+                    Objects, start_index, finish_index = load(dropdown.getSelected())
+                    global path_start, path_finish
+                    print(start_index, finish_index)
+                    path_start = Objects[int(start_index)]
+                    path_finish = Objects[int(finish_index)]
+
                     play()
         pygame_widgets.update(pygame.event.get())
         pygame.display.update()
@@ -550,8 +560,9 @@ def play():
     BACK_BUTTON = Button(image=None, pos=(150, 550), text_input='НАЗАД', font=get_font(75), base_color='White',
                          hovering_color='Green')
     if is_admin:
-        SAVE_LEVEL_BUTTON = Button(image=None, pos=(550, 550), text_input='СОХРАНИТЬ', font=get_font(75), base_color='White',
-                         hovering_color='Green')
+        SAVE_LEVEL_BUTTON = Button(image=None, pos=(550, 550), text_input='СОХРАНИТЬ', font=get_font(75),
+                                   base_color='White',
+                                   hovering_color='Green')
         SAVE_LEVEL_BUTTON.reverse()
     BACK_BUTTON.reverse()
     if not Objects:
@@ -835,7 +846,10 @@ def save_menu():
                     level_name.hide()
                     play()
                 if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    save(level_name.getText())
+                    if not path_start or not path_finish:
+                        print("Start or finish is not set !")
+                        continue
+                    save(path_start, path_finish, level_name.getText())
                     save_flag = True
         pygame.display.update()
 
