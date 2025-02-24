@@ -257,7 +257,7 @@ camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
 scale = 1
 timer = 0
-is_admin = True
+is_admin = False
 
 
 def save(start, finish, name="UNTITLED"):
