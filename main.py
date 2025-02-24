@@ -38,6 +38,7 @@ NODE_SUCCESSFUL_PATH = (0, 153, 76)
 NODE_WRONG_PATH = (194, 36, 25)
 NODE_COLOR = (125, 125, 125)
 NODE_PATH_COLOR = (13, 212, 212)
+PATH_COLOR = NODE_PATH_COLOR
 NODE_FINISH_COLOR = (245, 236, 66)
 NODE_START_COLOR = (164, 245, 66)
 
@@ -80,7 +81,7 @@ slider.hide()
 output.hide()
 textbox.hide()
 
-
+users_path = []
 def get_mouse_pos():
     m_pos = pygame.mouse.get_pos()
     m_pos = Vector(m_pos[0], m_pos[1])
@@ -157,9 +158,10 @@ class Node:
         pygame.draw.circle(surface, node_color, position.get_tuple(), radius)
         pygame.draw.circle(surface, (int(node_color[0] * 0.55), int(node_color[1] * 0.55), int(node_color[2] * 0.55)),
                            position.get_tuple(), int(radius), int(radius * 0.3))
+        global users_path
         for dest in self.destinations:
-            if self in right_path:
-                if dest in right_path:
+            if self in users_path:
+                if dest in users_path:
                     draw_connection(surface, node_color, self, dest)
             else:
                 draw_connection(surface, node_color, self, dest)
@@ -356,9 +358,12 @@ def get_random_graph(vertices):
 
 
 def is_right_path(users_path, right_path):
-    if users_path == right_path:
-        return True
-    return False
+    if len(users_path) != len(right_path):
+        return False
+    for node in right_path:
+        if node not in users_path:
+            return  False
+    return True
 
 
 def intro():
@@ -499,9 +504,9 @@ def start_campaign(current_lives=3):
     global lives, current_level
     lives = current_lives
     current_level += 1
-    levels_list = ['1.csv']  # сюда вставь названия уровней кампании
+    levels_list = ['__LEVEL1__']  # сюда вставь названия уровней кампании
     global Objects
-    Objects, start_index, finish_index = load(levels_list[current_level][:-4])
+    Objects, start_index, finish_index = load(levels_list[current_level])
     global path_start, path_finish
     path_start = Objects[int(start_index)]
     path_finish = Objects[int(finish_index)]
@@ -567,6 +572,8 @@ def play():
     BACK_BUTTON.reverse()
     if not Objects:
         Objects = []
+    users_path = [].copy()
+
     if lives != 0:
         game_mod = True
     while running:
@@ -616,10 +623,10 @@ def play():
                                     o.distances.pop(o.destinations.index(obj))
                                     o.destinations.remove(obj)
                         elif alt:
-                            if obj in right_path:
-                                right_path.remove(obj)
+                            if obj in users_path:
+                                users_path.remove(obj)
                             else:
-                                right_path.append(obj)
+                                users_path.append(obj)
                         else:
                             is_grabbing = True
                             grabbed = obj
@@ -768,8 +775,8 @@ def play():
         display_surface.fill(BLACK)
         for obj in Objects:
             obj.draw(display_surface, NODE_COLOR, node_radius)
-        for obj in right_path:
-            obj.draw(display_surface, NODE_SUCCESSFUL_PATH, node_radius)
+        for obj in users_path:
+            obj.draw(display_surface, PATH_COLOR, node_radius)
 
         if is_inputting:
             textbox.draw()
