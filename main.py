@@ -497,7 +497,7 @@ def start_campaign(current_lives=3):
     global lives, current_level
     lives = current_lives
     current_level += 1
-    levels_list = ['11.csv']  # сюда вставь названия уровней кампании
+    levels_list = ['1.csv']  # сюда вставь названия уровней кампании
     global Objects
     Objects = load(levels_list[current_level][:-4])
     play()
@@ -616,7 +616,7 @@ def play():
                 BACK_BUTTON.reverse()
                 if is_admin:
                     SAVE_LEVEL_BUTTON.reverse()
-            if event.type == KEYDOWN and hasattr(event, 'mod') and event.key == pygame.K_g:
+            if event.type == KEYDOWN and event.key == pygame.K_g:
                 for obj in Objects:
                     obj.destinations.clear()
                     obj.distances.clear()
