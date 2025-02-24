@@ -504,9 +504,9 @@ def start_campaign(current_lives=3):
     global lives, current_level
     lives = current_lives
     current_level += 1
-    levels_list = ['1.csv']  # сюда вставь названия уровней кампании
+    levels_list = ['__LEVEL1__']  # сюда вставь названия уровней кампании
     global Objects
-    Objects, start_index, finish_index = load(levels_list[current_level][:-4])
+    Objects, start_index, finish_index = load(levels_list[current_level])
     global path_start, path_finish
     path_start = Objects[int(start_index)]
     path_finish = Objects[int(finish_index)]
