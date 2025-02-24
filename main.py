@@ -604,6 +604,9 @@ def play():
                     game_mod = False
                     current_level = -1
                     create()
+                if game_mod and CHECK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    pass
+
                 if is_admin and SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     textbox.hide()
                     save_menu()
@@ -814,6 +817,10 @@ def play():
             screen.blit(TIMER_TEXT, TIMER_RECT)
             screen.blit(LIVES_TEXT, LIVES_RECT)
             timer += timer_clock.tick() / 1000
+            CHECK_BUTTON = Button(image=None, pos=(650, 480), text_input='ПРОВЕРИТЬ', font=get_font(45), base_color='White',
+                                 hovering_color='Green')
+            CHECK_BUTTON.changeColor(pygame.mouse.get_pos())
+            CHECK_BUTTON.update(screen)
         pygame.display.update()
 
 
@@ -852,7 +859,7 @@ def save_menu():
                 if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
                     level_name.hide()
                     play()
-                if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                if SAVE_LEVEL_BUTTON.checkForInput(pygame.mouse.get_pos()) or (event.type == KEYDOWN and event.key == pygame.K_RETURN):
                     if not path_start or not path_finish:
                         print("Start or finish is not set !")
                         continue
