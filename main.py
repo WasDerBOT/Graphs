@@ -550,6 +550,7 @@ def start_campaign(current_lives=3):
         for button in [BACK_BUTTON, NEXT_BUTTON]:
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
+        pygame_widgets.update(pygame.event.get())
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -562,7 +563,6 @@ def start_campaign(current_lives=3):
                     user_name.hide()
                     USER = user_name.getText()
                     play()
-        pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
 
