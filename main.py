@@ -872,7 +872,7 @@ def play():
 
         clock.tick(FPS)
         if game_mod:
-            TIMER_TEXT = get_font(35).render(f'ВРЕМЯ:{round(timer) - 1}', True, 'White')
+            TIMER_TEXT = get_font(35).render(f'ВРЕМЯ:{300 - round(timer) + 1}', True, 'White')
             TIMER_RECT = TIMER_TEXT.get_rect(center=(100, 50))
             LIVES_TEXT = get_font(35).render(f'ЖИЗНИ:{lives}', True, 'White')
             LIVES_RECT = LIVES_TEXT.get_rect(center=(650, 50))
