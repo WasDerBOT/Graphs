@@ -171,11 +171,13 @@ class Node:
         for dest in self.destinations:
             if self in users_path:
                 if dest in users_path and abs(users_path.index(dest) - users_path.index(self)) <= 1:
-                    draw_connection(surface, node_color, self, dest)
+                    draw_connection(surface, NODE_PATH_COLOR, self, dest)
+                else:
+                    draw_connection(surface, NODE_COLOR, self, dest)
             else:
                 draw_connection(surface, node_color, self, dest)
             if self is not path_start and self is not path_finish and (dest is path_start or dest is path_finish):
-                dest.draw(surface, node_color, radius)
+                pass#dest.draw(surface, node_color, radius)
 
         if self is path_start:
             FONT = pygame.font.Font('Cinematic.otf', size=int(50 / scale))
