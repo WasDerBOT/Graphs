@@ -41,7 +41,7 @@ NODE_PATH_COLOR = (13, 212, 212)
 PATH_COLOR = NODE_PATH_COLOR
 NODE_FINISH_COLOR = (245, 236, 66)
 NODE_START_COLOR = (164, 245, 66)
-
+USER = ''
 FONT = pygame.font.Font('Cinematic.otf', size=32)
 
 node_radius = 30
@@ -77,12 +77,9 @@ slider = Slider(screen, 100, 150, 600, 40, min=0, max=100, step=1, colour=(255, 
 
 output = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255), colour=(0, 0, 0))
 
-user_name = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255), colour=(0, 0, 0))
-
 slider.hide()
 output.hide()
 textbox.hide()
-user_name.hide()
 
 users_path = [].copy()
 
@@ -523,8 +520,11 @@ LEVELS = ['__LEVEL1__', '__LEVEL2__', '__LEVEL3__', '__LEVEL4__', '__LEVEL5__'] 
 
 
 def start_campaign(current_lives=3):
-    global lives, current_level
-
+    running = True
+    global lives, current_level, USER
+    user_name = TextBox(display_surface, 200, 170, 350, 100, fontSize=40,
+                         borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
+                         radius=10, borderThickness=10, placeholderText="Ваше имя")
     lives = current_lives
 
     current_level += 1
@@ -535,7 +535,29 @@ def start_campaign(current_lives=3):
     global path_start, path_finish
     path_start = Objects[int(start_index)]
     path_finish = Objects[int(finish_index)]
-    play()
+    BACK_BUTTON = Button(image=None, pos=(400, 500), text_input='НАЗАД', font=get_font(75), base_color='White',
+                         hovering_color='Green')
+    NEXT_BUTTON = Button(image=None, pos=(400, 400), text_input='НАЧАТЬ', font=get_font(75), base_color='White',
+                         hovering_color='Green')
+    while running:
+        screen.fill((0, 0, 0))
+        for button in [BACK_BUTTON, NEXT_BUTTON]:
+            button.changeColor(pygame.mouse.get_pos())
+            button.update(screen)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if BACK_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    user_name.hide()
+                    create()
+                if NEXT_BUTTON.checkForInput(pygame.mouse.get_pos()):
+                    user_name.hide()
+                    USER = user_name.getText()
+                    play()
+        pygame_widgets.update(pygame.event.get())
+        pygame.display.update()
 
 
 def win():
