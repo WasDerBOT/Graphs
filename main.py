@@ -77,12 +77,16 @@ slider = Slider(screen, 100, 150, 600, 40, min=0, max=100, step=1, colour=(255, 
 
 output = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255), colour=(0, 0, 0))
 
+user_name = TextBox(screen, 0, 250, 200, 75, fontSize=70, textColour=(255, 255, 255), colour=(0, 0, 0))
+
 slider.hide()
 output.hide()
 textbox.hide()
+user_name.hide()
 
 
 users_path = [].copy()
+
 
 def get_mouse_pos():
     m_pos = pygame.mouse.get_pos()
@@ -381,7 +385,8 @@ def check_path():
     else:
         lives -= 1
     if lives <= 0:
-        global current_level
+        global current_level, timer
+        timer = 1
         current_level = -1
         start_campaign()
 
@@ -560,7 +565,7 @@ def next_level():
 
     Objects.clear()
     Objects, start_index, finish_index = load(LEVELS[current_level])
-    global path_start, path_finish
+    global path_start, path_finish, timer
     path_start = Objects[int(start_index)]
     path_finish = Objects[int(finish_index)]
     play()
