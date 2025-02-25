@@ -68,6 +68,13 @@ def set_level_name():
     level_name.setText("")
 
 
+def set_user_name():
+    global USER
+    USER = user_name.getText()
+    user_name.setText("")
+    play()
+
+
 textbox = TextBox(display_surface, 255, 100, 300, 100, fontSize=40,
                   borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
                   radius=10, borderThickness=10, placeholderText="Введите длину", onSubmit=set_dist)
@@ -521,10 +528,10 @@ LEVELS = ['__LEVEL1__', '__LEVEL2__', '__LEVEL3__', '__LEVEL4__', '__LEVEL5__'] 
 
 def start_campaign(current_lives=3):
     running = True
-    global lives, current_level, USER
+    global lives, current_level, USER, user_name
     user_name = TextBox(display_surface, 200, 170, 350, 100, fontSize=40,
                          borderColour=(255, 255, 255, 125), textColour=(0, 0, 0),
-                         radius=10, borderThickness=10, placeholderText="Ваше имя")
+                         radius=10, borderThickness=10, placeholderText="Ваше имя", onSubmit=set_user_name)
     lives = current_lives
 
     current_level += 1
@@ -555,8 +562,8 @@ def start_campaign(current_lives=3):
                     user_name.hide()
                     create()
                 if NEXT_BUTTON.checkForInput(pygame.mouse.get_pos()):
-                    user_name.hide()
                     USER = user_name.getText()
+                    user_name.hide()
                     play()
 
         pygame.display.update()
