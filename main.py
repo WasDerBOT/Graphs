@@ -386,6 +386,9 @@ def check_path():
         lives -= 1
     if lives <= 0:
         global current_level, timer
+        connection = sqlite3.connect('my_database.db')
+        cursor = connection.cursor()
+        cursor.execute(f'INSERT INTO Users(username, time) VALUES({USER}, {round(timer) + 60 * (3 - lives)})')
         timer = 1
         current_level = -1
         start_campaign()
