@@ -258,7 +258,7 @@ camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
 scale = 1
 timer = 0
-is_admin = False
+is_admin = True
 
 
 def save(start, finish, name="UNTITLED"):
@@ -340,9 +340,9 @@ def get_font(size):
 
 def random_node(node, objects_local):
     if randint(0, 100) > 80 or len(node.destinations) <= 1:
-        a = randint(0, 100) / 100
+        a = randint(1, 100) / 100
         pos = Vector(node.position.x + cos(a), node.position.y + sin(a))
-        dist = randint(0, 50)
+        dist = randint(1, 50)
         temp = Node(pos, [node].copy(), [dist].copy())
         node.destinations.append(temp)
         node.distances.append(dist)
@@ -522,7 +522,7 @@ def create():
         pygame.display.update()
 
 
-LEVELS = ['__LEVEL1__', '__LEVEL2__']  # сюда вставь названия уровней кампании
+LEVELS = ['__LEVEL1__', '__LEVEL2__', '__LEVEL3__', '__LEVEL4__', '__LEVEL5__']  # сюда вставь названия уровней кампании
 
 
 def start_campaign(current_lives=3):
@@ -585,6 +585,8 @@ def next_level():
     connecting_from = None
 
     Objects.clear()
+    if current_level == len(LEVELS):
+        win()
     Objects, start_index, finish_index = load(LEVELS[current_level])
     global path_start, path_finish, timer
     path_start = Objects[int(start_index)]
