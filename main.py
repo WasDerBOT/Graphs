@@ -84,7 +84,6 @@ output.hide()
 textbox.hide()
 user_name.hide()
 
-
 users_path = [].copy()
 
 
@@ -261,7 +260,7 @@ camera_size = Vector(800, 600)
 camera_center = camera_pos + camera_size / 2
 scale = 1
 timer = 0
-is_admin = True
+is_admin = False
 
 
 def save(start, finish, name="UNTITLED"):
@@ -364,12 +363,7 @@ def get_random_graph(vertices):
 
 
 def is_right_path():
-    for obj in users_path:
-        print(Objects.index(obj))
-    print("-----")
-    for obj in right_path:
-        print(Objects.index(obj))
-    if len(users_path) != len(right_path):
+    if abs(len(users_path) - len(right_path)) > 2:
         return False
     for node in right_path:
         if node not in users_path:
@@ -529,7 +523,6 @@ LEVELS = ['__LEVEL1__', '__LEVEL2__', '__LEVEL3__', '__LEVEL4__', '__LEVEL5__'] 
 
 
 def start_campaign(current_lives=3):
-
     global lives, current_level
 
     lives = current_lives
@@ -634,7 +627,6 @@ def play():
     if not Objects:
         Objects = []
 
-
     if lives != 0:
         game_mod = True
     while running:
@@ -706,7 +698,7 @@ def play():
                 BACK_BUTTON.reverse()
                 if is_admin:
                     SAVE_LEVEL_BUTTON.reverse()
-            if event.type == KEYDOWN and event.key == pygame.K_g:
+            if event.type == KEYDOWN and event.key == pygame.K_g and is_admin:
                 for obj in Objects:
                     obj.destinations.clear()
                     obj.distances.clear()
