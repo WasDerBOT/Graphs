@@ -163,7 +163,7 @@ class Node:
         global users_path
         for dest in self.destinations:
             if self in users_path:
-                if dest in users_path:
+                if dest in users_path and abs(users_path.index(dest) - users_path.index(self)) <= 1:
                     draw_connection(surface, node_color, self, dest)
             else:
                 draw_connection(surface, node_color, self, dest)
@@ -544,7 +544,9 @@ def start_campaign(current_lives=3):
         for button in [BACK_BUTTON, NEXT_BUTTON]:
             button.changeColor(pygame.mouse.get_pos())
             button.update(screen)
-        for event in pygame.event.get():
+        events = pygame.event.get()
+        pygame_widgets.update(events)
+        for event in events:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
@@ -556,7 +558,7 @@ def start_campaign(current_lives=3):
                     user_name.hide()
                     USER = user_name.getText()
                     play()
-        pygame_widgets.update(pygame.event.get())
+
         pygame.display.update()
 
 
